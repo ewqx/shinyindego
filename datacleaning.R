@@ -133,17 +133,93 @@ nrow(stations_df_tot) #169
 stationtable$Station_ID <- as.numeric(stationtable$Station_ID)
 stations_df_tot$start_station <- as.numeric(stations_df_tot$start_station)
 
-full_join(stationtable, stations_df_tot, by = c("Station_ID" = "start_station"))
+idgstations <- full_join(stationtable, stations_df_tot, by = c("Station_ID" = "start_station"))
 
+#write.csv(idgstations,'miscdata/idgstations.csv')
 
 #GET CENSUS TRACT OF STATIONS
 #https://stackoverflow.com/questions/51499410/retrieve-census-tract-from-coordinates
 
+idgstations2 <- read.csv(file = 'miscdata/idgstations.csv')
+
+#install.packages("tigris")
+library(tigris)
+
+#https://stackoverflow.com/questions/65795510/r-call-geolocator-latlon-function-returns-na
+replacement_function <- function (lat, lon, benchmark, vintage) 
+{
+  if (missing(benchmark)) {
+    benchmark <- "Public_AR_Census2020"
+  }
+  else {
+    benchmark <- benchmark
+  }
+  if (missing(vintage)) {
+    vintage <- "Census2020_Census2020"
+  }
+  else {
+    vintage <- vintage
+  }
+  call_start <- "https://geocoding.geo.census.gov/geocoder/geographies/coordinates?"
+  url <- paste0("x=", lon, "&y=", lat)
+  benchmark0 <- paste0("&benchmark=", benchmark)
+  vintage0 <- paste0("&vintage=", vintage, "&format=json")
+  url_full <- paste0(call_start, url, benchmark0, vintage0)
+  r <- httr::GET(url_full)
+  httr::stop_for_status(r)
+  response <- httr::content(r)
+  return(response$result$geographies$`Census Blocks`[[1]]$GEOID)
+  if (length(response$result$geographies$`2020 Census Blocks`[[1]]$GEOID) ==
+      0) {
+    message(paste0("Lat/lon (", lat, ", ", lon, ") returned no geocodes. An NA was returned."))
+    return(NA_character_)
+  }
+  else {
+    if (length(response$result$geographies$`2020 Census Blocks`[[1]]$GEOID) >
+        1) {
+      message(paste0("Lat/lon (", lat, ", ", lon, ") returned more than geocode. The first match was returned."))
+    }
+    return(response$result$geographies$`2020 Census Blocks`[[1]]$GEOID)
+  }
+}
+
+coords <- idgstations2 %>% select(start_lat, start_lon)
+coords <- na.omit(coords)
+head(coords)
+nrow(coords) #165
+
+#States and the territories are identified by a 2-digit code.
+#• Counties within states are identified by a 3-digit code.
+#• Tracts within counties are identified 6-digit code.
+#• Blocks within tracts are identified by a 4-digit code.
+
+#42 PENNSYLVANIA
+#101 Philadelphia County
+
+coords$FIPScode <- apply(coords, 1, function(row) replacement_function(row['start_lat'], row['start_lon']))
 
 
+coords$state <- substr(coords$FIPScode, 1,2)
+coords$county <- substr(coords$FIPScode, 3,5)
+coords$censustract <- substr(coords$FIPScode, 6, 11)
+coords$censusblock <- substr(coords$FIPScode, 12,15)
+coords$fips <- substr(coords$FIPScode, 1,15)
+head(coords)
 
+#coords <- within(coords, rm(censustract, censusblock))
 
+lapply(coords, class)
 
+#coords$censustract <- as.numeric(coords$censustract)
+#numeric drops zeroes - how to add leading zeros - keep as character for now
 
+#remove FIPScode to write csv. (FIPScode class = list)
+#coords <- within(coords, rm(FIPScode)) 
+#write.csv(coords,'miscdata/idgstations_fips.csv')
 
+# PHILADELPHIA NEIGHBORHOODS
+#https://gis.stackexchange.com/questions/282750/identify-polygon-containing-point-with-r-sf-package
 
+#https://github.com/azavea/geo-data/blob/master/Neighborhoods_Philadelphia/Neighborhoods_Philadelphia.geojson
+
+#
