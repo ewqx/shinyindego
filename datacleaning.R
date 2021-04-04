@@ -102,6 +102,44 @@ add_yearcol <- function(df)
 
 list_dfs <- lapply(list_dfs, add_yearcol)
 
+#LOAD INDEGO STATION INFO CSV
+stationtable <- read.csv(file = 'miscdata/indego-stations-2021-01-01.csv')
+head(stationtable)
+nrow(stationtable) #157 stations
+lapply(stationtable, class)
+#$Station_ID [1] "integer"
+#$Station_Name [1] "factor"
+#$Go_live_date [1] "factor"
+#$Status [1] "factor"
+
+stations_df <- lapply(list_dfs, function(x) x%>% select(start_station, start_lat, start_lon, end_station, end_lat, end_lon)) 
+
+head(stations_df)
+#remove duplicated elements
+stations_df <- lapply(stations_df, function(x) x[!duplicated(x)])
+
+#combine list of dataframes to one dataframe 
+stations_df_tot <- rbindlist(stations_df)
+head(stations_df_tot)
+nrow(stations_df_tot)
+lapply(stations_df_tot, class)
+
+stations_df_tot <- stations_df_tot %>% select(start_station, start_lat, start_lon)
+stations_df_tot <- distinct(stations_df_tot, .keep_all = FALSE)
+nrow(stations_df_tot) #169
+
+#join indego station table to stations_df_tot
+# make sure columns are numeric
+stationtable$Station_ID <- as.numeric(stationtable$Station_ID)
+stations_df_tot$start_station <- as.numeric(stations_df_tot$start_station)
+
+full_join(stationtable, stations_df_tot, by = c("Station_ID" = "start_station"))
+
+
+#GET CENSUS TRACT OF STATIONS
+#https://stackoverflow.com/questions/51499410/retrieve-census-tract-from-coordinates
+
+
 
 
 
