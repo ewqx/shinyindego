@@ -93,7 +93,7 @@ list_dfs <- lapply(list_dfs, add_datecol)
 head(list_dfs)
 #check
 list_dfs[6] 
-list_dfs[4]
+list_dfs[10]
 
 
 #create year and quarter column
@@ -128,7 +128,7 @@ lapply(stationtable, class)
 stations_df <- lapply(list_dfs, function(x) x%>% select(start_station, start_lat, start_lon, end_station, end_lat, end_lon)) 
 
 head(stations_df)
-#remove duplicated elements
+#remove duplicated elements in list of dataframes
 stations_df <- lapply(stations_df, function(x) x[!duplicated(x)])
 
 #combine list of dataframes to one dataframe 
@@ -137,15 +137,19 @@ head(stations_df_tot)
 nrow(stations_df_tot)
 lapply(stations_df_tot, class)
 
+#use only start_stations
 stations_df_tot <- stations_df_tot %>% select(start_station, start_lat, start_lon)
+
+#only get unique stations - want coordinates of the unique stations in the table
 stations_df_tot <- distinct(stations_df_tot, .keep_all = FALSE)
 nrow(stations_df_tot) #169
 
-#join indego station table to stations_df_tot
-# make sure columns are numeric
+
+#make sure columns are numeric
 stationtable$Station_ID <- as.numeric(stationtable$Station_ID)
 stations_df_tot$start_station <- as.numeric(stations_df_tot$start_station)
 
+#join indego station table to stations_df_tot 
 idgstations <- full_join(stationtable, stations_df_tot, by = c("Station_ID" = "start_station"))
 
 #write.csv(idgstations,'miscdata/idgstations.csv')
@@ -155,9 +159,15 @@ idgstations <- full_join(stationtable, stations_df_tot, by = c("Station_ID" = "s
 
 idgstations2 <- read.csv(file = 'miscdata/idgstations.csv')
 
+
+### GET CENSUS DATA ###
+
 #install.packages("tigris")
 library(tigris)
 
+#get census tract/ FIPS code for each of the stations using tigris
+
+#use replacement_function in place of the tigris call_geolocator_latlon() function
 #https://stackoverflow.com/questions/65795510/r-call-geolocator-latlon-function-returns-na
 replacement_function <- function (lat, lon, benchmark, vintage) 
 {
@@ -196,43 +206,109 @@ replacement_function <- function (lat, lon, benchmark, vintage)
   }
 }
 
-coords <- idgstations2 %>% select(start_lat, start_lon)
-coords <- na.omit(coords)
-head(coords)
+head(idgstations)
+colnames(idgstations)
+
+#trim down dataset to just Station_ID and coordinates
+idgcoords <- idgstations %>% select(Station_ID, start_lat, start_lon)
+
+#eliminate na in table for replacement_function to work
+idgcoords <- na.omit(idgcoords)
+head(idgcoords)
 nrow(coords) #165
 
+
+#create new column FIPScode - (patience required)
+idgcoords$FIPScode <- apply(idgcoords, 1, function(row) replacement_function(row['start_lat'], row['start_lon']))
+
 #States and the territories are identified by a 2-digit code.
-#• Counties within states are identified by a 3-digit code.
-#• Tracts within counties are identified 6-digit code.
-#• Blocks within tracts are identified by a 4-digit code.
+# • Counties within states are identified by a 3-digit code.
+# • Tracts within counties are identified 6-digit code.
+# • Blocks within tracts are identified by a 4-digit code.
 
 #42 PENNSYLVANIA
 #101 Philadelphia County
 
-coords$FIPScode <- apply(coords, 1, function(row) replacement_function(row['start_lat'], row['start_lon']))
+#extract out census tract from FIPScode
+idgcoords$state <- substr(idgcoords$FIPScode, 1,2)
+idgcoords$county <- substr(idgcoords$FIPScode, 3,5)
+idgcoords$censustract <- substr(idgcoords$FIPScode, 6, 11)
+idgcoords$censusblock <- substr(idgcoords$FIPScode, 12,15)
+idgcoords$fips <- substr(idgcoords$FIPScode, 1,15)
+head(idgcoords)
 
+#remove original FIPScode column - class = list - prevents write.csv
+idgcoords <- within(idgcoords, rm(FIPScode))
 
-coords$state <- substr(coords$FIPScode, 1,2)
-coords$county <- substr(coords$FIPScode, 3,5)
-coords$censustract <- substr(coords$FIPScode, 6, 11)
-coords$censusblock <- substr(coords$FIPScode, 12,15)
-coords$fips <- substr(coords$FIPScode, 1,15)
-head(coords)
+#fips codes all have class of "character"
+lapply(idgcoords, class)
 
-#coords <- within(coords, rm(censustract, censusblock))
+#remove()
 
-lapply(coords, class)
-
-#coords$censustract <- as.numeric(coords$censustract)
+#idgcoords$censustract <- as.numeric(idgcoords$censustract) 
+#this will remove leading zeroes
 #numeric drops zeroes - how to add leading zeros - keep as character for now
 
-#remove FIPScode to write csv. (FIPScode class = list)
-#coords <- within(coords, rm(FIPScode)) 
-#write.csv(coords,'miscdata/idgstations_fips.csv')
+#write.csv(idgcoords,'miscdata/idgstations_fips.csv')
 
-# PHILADELPHIA NEIGHBORHOODS
+### PHILADELPHIA NEIGHBORHOODS - find out what neighborhoods stations are located within
 #https://gis.stackexchange.com/questions/282750/identify-polygon-containing-point-with-r-sf-package
+#https://cran.r-project.org/web/packages/geojsonR/vignettes/the_geojsonR_package.html
 
-#https://github.com/azavea/geo-data/blob/master/Neighborhoods_Philadelphia/Neighborhoods_Philadelphia.geojson
+library(magrittr)
+library(ggplot2)
+library(sf)
 
-#
+#phl_nbhds <- read_sf("./miscdata/Neighborhoods_Philadelphia.geojson")
+#head(phl_nbhds$geometry)
+#colnames(phl_nbhds)
+
+library(geojsonsf)
+phl_nbhds <- geojsonsf::geojson_sf("https://raw.githubusercontent.com/azavea/geo-data/master/Neighborhoods_Philadelphia/Neighborhoods_Philadelphia.geojson")
+
+head(phl_nbhds) 
+dimnames(idgcoords)
+dimnames(idglatlon)
+nrow(phl_nbhds) #158
+
+phl_nbhds %>%
+  ggplot() +
+  geom_sf(aes(fill = mapname))
+
+#extract out - only lat/lon
+idglatlon <- idgcoords %>% select(start_lat, start_lon)
+
+
+
+# PLOT MAP OF PHL NEIGHBORHOODS
+#read the geoJson file that is stored on the web with the geojsonio library:
+#https://www.r-graph-gallery.com/325-background-map-from-geojson-format-in-r.html
+#install.packages("geojsonio")
+#library(geojsonio)
+#create a geospatial object called spdf
+#spdf <- geojson_read("https://raw.githubusercontent.com/azavea/geo-data/master/Neighborhoods_Philadelphia/Neighborhoods_Philadelphia.geojson",  what = "sp")
+
+#'fortify' the data to get a dataframe format required by ggplot2
+#geospatial object thus needs to be transformed using the tidy() function of the broom package.
+#library(broom)
+#spdf_fortified <- tidy(spdf) #Regions defined for each Polygons
+
+#head(spdf)
+#head(spdf_fortified)
+#colnames(spdf_fortified)
+
+#install.packages("mapproj")
+#ggplot() +
+#  geom_polygon(data = spdf_fortified, 
+#               aes( x = long, y = lat, group = group), 
+#               fill="#69b3a2", 
+#               color="white") +
+#  theme_void() +
+#  coord_map()
+
+
+
+
+
+
+
