@@ -13,6 +13,8 @@ fluidPage(
         sidebarPanel(
             h4("sidebar panel"),
             
+            h2("test signed commit"),
+            
             selectizeInput(inputId = "status",
                            label = "station status",
                            choices = unique(stations$Status))
