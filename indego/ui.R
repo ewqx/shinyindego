@@ -22,6 +22,9 @@ fluidPage(
         mainPanel(
             h4("main panel"),
             fluidRow(
+                textOutput("count")
+            ),
+            fluidRow(
                 column(2,
                        h5("Buttons"),
                        actionButton("action", "Action"),
