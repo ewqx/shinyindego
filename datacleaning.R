@@ -45,11 +45,11 @@ csv_fpaths <- paste0('./data/', csv_fnames, sep = '')
 list_dfs <- lapply(csv_fpaths, fread)
 #all_dfs <- lapply( csv_fpaths, FUN = function( fp ) read.csv( fp, stringsAsFactors = F ) )
 
-head(list_dfs)
-colnames(list_dfs[[5]])
-ncol(list_dfs[[5]]) #15
-nrow (list_dfs[[5]])
-head (list_dfs[[5]]) #2019 Q1
+#head(list_dfs)
+#colnames(list_dfs[[5]])
+#ncol(list_dfs[[5]]) #15
+#nrow (list_dfs[[5]])
+#head (list_dfs[[5]]) #2019 Q1
 lapply(list_dfs[[5]], class)
 lapply(list_dfs[[7]], class)
 
@@ -91,16 +91,29 @@ add_datecol <- function(df)
 list_dfs <- lapply(list_dfs, add_datecol)
 
 head(list_dfs)
+#check
 list_dfs[6] 
-list_dfs[10]
+list_dfs[4]
+
 
 #create year and quarter column
-
 add_yearcol <- function(df)
   df %>% mutate(
     start_year = format(start_time, format="%Y"))
 
 list_dfs <- lapply(list_dfs, add_yearcol)
+
+add_quartercol <- function(df)
+  df %>% mutate(
+    quarter = case_when(
+         month(start_date) >= 01 & month(start_date) <= 03 ~ "Q1",
+         month(start_date) >= 04 & month(start_date) <= 06 ~ "Q2",
+         month(start_date) >= 07 & month(start_date) <= 09 ~ "Q3",
+         month(start_date) >= 10 & month(start_date) <= 12 ~ "Q4",
+         TRUE ~ NA_character_)
+)
+
+list_dfs <- lapply(list_dfs, add_quartercol)
 
 #LOAD INDEGO STATION INFO CSV
 stationtable <- read.csv(file = 'miscdata/indego-stations-2021-01-01.csv')
