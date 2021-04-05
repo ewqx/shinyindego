@@ -13,7 +13,7 @@ fluidPage(
         sidebarPanel(
             h4("sidebar panel"),
             
-            h2("test signed commit"),
+            h2("test signed commit verification"),
             
             selectizeInput(inputId = "status",
                            label = "station status",
