@@ -273,11 +273,10 @@ nrow(phl_nbhds) #158
 
 phl_nbhds %>%
   ggplot() +
-  geom_sf(aes(fill = mapname))
+  geom_sf(aes(fill = listname))
 
 #extract out - only lat/lon
 idglatlon <- idgcoords %>% select(start_lat, start_lon)
-
 
 
 # PLOT MAP OF PHL NEIGHBORHOODS
