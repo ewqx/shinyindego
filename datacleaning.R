@@ -17,7 +17,7 @@ cwd <- here::here()
 cwd
 
 # DEFINE SUBDIRECTORIES
-subdir <- "/Users/estheroids/Documents/dsa/Mod04DataAnalysisR/12-R_ShinyProj/shinyindego"
+subdir <- "Documents/dsa/Mod04DataAnalysisR/12-R_ShinyProj/shinyindego"
 #data_subdir <- "data"
 
 # SET DIRECTORY
@@ -143,7 +143,6 @@ stations_df_tot <- stations_df_tot %>% select(start_station, start_lat, start_lo
 #only get unique stations - want coordinates of the unique stations in the table
 stations_df_tot <- distinct(stations_df_tot, .keep_all = FALSE)
 nrow(stations_df_tot) #169
-
 
 #make sure columns are numeric
 stationtable$Station_ID <- as.numeric(stationtable$Station_ID)
@@ -283,6 +282,53 @@ phl_commute_walked <- get_acs(geography = "tract", variables = "B08134_101", sta
 
 #Age proxy
 phl_workers16 <- get_acs(geography = "tract", variables = "B08016_001", state = "PA", county = "Philadelphia")
+
+head(phl_workers16$GEOID) #"42101000100" "42101000200" "42101000300" 
+head(phl_pop)
+head(phl_commute_bike)
+head(phl_commute_walked)
+head(phl_commute_car)
+head(phl_commute_public)
+head(phl_race_white)
+head(phl_race_black)
+head(phl_income$variable)
+sum(phl_pop$estimate) #1,579,075
+
+#join tables/ change column names
+require(data.table)
+?setnames
+setnames(phl_pop, old = "estimate", new = "B01003_001 POP")
+setnames(phl_income, old = "estimate", new = "B19013_001 INCOME")
+setnames(phl_race_black, old = "estimate", new = "B02001_003 RACE_B")
+setnames(phl_race_white, old = "estimate", new = "B02001_002 RACE_W")
+setnames(phl_workers16, old = "estimate", new = "B08016_001 WORKERS16")
+setnames(phl_commute_bike, old = "estimate", new = "B08134_111 CM_BIKE")
+setnames(phl_commute_walked, old = "estimate", new = "B08134_101 CM_WALK")
+setnames(phl_commute_car, old = "estimate", new = "B08134_011 CM_CAR")
+setnames(phl_commute_public, old = "estimate", new = "B08134_061 CM_PUB")
+
+phlcensuslst <- list(phl_pop, phl_income, phl_race_white, phl_race_black, phl_commute_bike, phl_commute_car, phl_commute_public, phl_commute_walked, phl_workers16)
+
+#phlcensuscol <- c("B01003_001 POP", "B19013_001 INCOME", "B02001_003 RACE_B", "B02001_002 RACE_W", "B08016_001 WORKERS16", "B08134_111 CM_BIKE", "B08134_101 CM_WALK", "B08134_011 CM_CAR","B08134_061 CM_PUB")
+
+phlcensuslst <- lapply(phlcensuslst, function(x) x%>% select(-c("NAME", "variable", "moe")))
+
+phlcensus_dftot <- phlcensuslst %>%
+  Reduce(function (df1, df2) left_join(df1, df2, by="GEOID"), .)
+
+colnames(phlcensus_dftot)
+head(phlcensus_dftot)
+
+#create census tract column
+phlcensus_dftot <- 
+  phlcensus_dftot %>% 
+  mutate(
+    ctract = substr(GEOID, 6,12)
+  )
+
+head(phlcensus_dftot$ctract)
+
+#write.csv(phlcensus_dftot,'miscdata/phlcensus_dftot.csv')
 
 ### PHILADELPHIA NEIGHBORHOODS - find out what neighborhoods stations are located within
 #https://gis.stackexchange.com/questions/282750/identify-polygon-containing-point-with-r-sf-package
