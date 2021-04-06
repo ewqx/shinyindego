@@ -251,6 +251,39 @@ lapply(idgcoords, class)
 
 #write.csv(idgcoords,'miscdata/idgstations_fips.csv')
 
+### CENSUS API
+library(tidycensus)
+library(tidyverse)
+library(viridis)
+
+census_api_key(Sys.getenv("CENSUS_API_KEY"), overwrite = FALSE, install = FALSE)
+
+#see link below for table/ variables code
+#https://api.census.gov/data/2019/acs/acs5/variables.html
+
+phl_income <- get_acs(geography = "tract", variables = "B19013_001", state = "PA", county = "Philadelphia")#, geometry = TRUE)
+
+phl_pop <- get_acs(geography = "tract", variables = "B01003_001", state = "PA", county = "Philadelphia")
+
+phl_race_white <- get_acs(geography = "tract", variables = "B02001_002", state = "PA", county = "Philadelphia")
+
+phl_race_black <- get_acs(geography = "tract", variables = "B02001_003", state = "PA", county = "Philadelphia")
+
+#MEANS OF TRANSPORTATION TO WORK - Taxicab, motorcycle, bicycle, or other means
+phl_commute_bike <- get_acs(geography = "tract", variables = "B08134_111", state = "PA", county = "Philadelphia")
+
+#MEANS OF TRANSPORTATION TO WORK - Public transportation (excluding taxicab):
+phl_commute_public <- get_acs(geography = "tract", variables = "B08134_061", state = "PA", county = "Philadelphia")
+
+#MEANS OF TRANSPORTATION TO WORK - Car, truck, or van
+phl_commute_car <- get_acs(geography = "tract", variables = "B08134_011", state = "PA", county = "Philadelphia")
+
+#MEANS OF TRANSPORTATION TO WORK - walked
+phl_commute_walked <- get_acs(geography = "tract", variables = "B08134_101", state = "PA", county = "Philadelphia")
+
+#Age proxy
+phl_workers16 <- get_acs(geography = "tract", variables = "B08016_001", state = "PA", county = "Philadelphia")
+
 ### PHILADELPHIA NEIGHBORHOODS - find out what neighborhoods stations are located within
 #https://gis.stackexchange.com/questions/282750/identify-polygon-containing-point-with-r-sf-package
 #https://cran.r-project.org/web/packages/geojsonR/vignettes/the_geojsonR_package.html
@@ -277,7 +310,6 @@ phl_nbhds %>%
 
 #extract out - only lat/lon
 idglatlon <- idgcoords %>% select(start_lat, start_lon)
-
 
 # PLOT MAP OF PHL NEIGHBORHOODS
 #read the geoJson file that is stored on the web with the geojsonio library:
