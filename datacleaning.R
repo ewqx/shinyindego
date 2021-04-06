@@ -67,10 +67,61 @@ lapply(list_dfs[[7]], class)
 #$plan_duration [1] "integer"
 #$trip_route_category [1] "character"
 #$passholder_type [1] "character"
-#$bike_type [1] "character"
+#$bike_type [1] "character" -- add this column to 2018 Q1 and Q2 data
 #$start_date [1] "Date"
 
-list_dfs[6] #2019-04-01 00:01:00 
+# EXPLORE DATA
+
+# 1. bike_type column missing in 2018 Q1 and Q2 dataset, add column and set all as standard 
+# 2. unique values - passholder_type, plan_duration, trip_route_category - drop null
+# trip duration categories
+# start time - day/night, hours?
+# 3. start_time - includes date and time - separate out date and time, add day
+# 4. separate out weekday/ weekend
+
+
+# GET UNIQUE VALUES in the following columns: passholder_type plan_duration trip_route_category
+library(dplyr)
+library(purrr) #https://www.rdocumentation.org/packages/purrr/versions/0.2.5/topics/flatten
+
+map(list_dfs,  pluck, "passholder_type") %>%
+  flatten_chr %>%s
+  unique
+
+#[1] "Indego30"     "Indego365"    "Walk-up"     
+#[4] "IndegoFlex"   "One Day Pass" "Day Pass"    
+#[7] "NULL"   
+
+sum(list_dfs[[6]]$passholder_type == "NULL") #35
+unique(list_dfs[[11]]$passholder_type)
+#2018 Q1 "Indego30"   "Indego365"  "Walk-up"  "IndegoFlex" "One Day Pass"
+#2018 Q2 "Indego30"   "Indego365"  "Walk-up"  "IndegoFlex" "Day Pass"  
+#2019 Q2 "Indego30"   "Indego365"  "Day Pass" "IndegoFlex" "NULL" "Walk-up"  
+#2019 Q3 "Indego30"   "Indego365"  "Day Pass" "IndegoFlex"
+#2020 Q3 "Indego30"   "Indego365"  "Day Pass" 
+
+map(list_dfs,  pluck, "plan_duration") %>%
+  flatten_chr %>%
+  unique
+
+#[1] "30"   "365"  "0"    "1"    "2"    "NULL"
+#[7] "180" 
+
+unique(list_dfs[[10]]$plan_duration)
+#2018 Q1 - 30 365   0   1
+#2019 Q2 - "30"   "365"  "1"    "2"    "NULL"
+#2019 Q3 - 30 365   1   180
+#2020 Q2 - 30   1 365
+#2020 Q4 - 365  30   1
+
+map(list_dfs,  pluck, "trip_route_category") %>%
+  flatten_chr %>%
+  unique
+#"One Way"    "Round Trip"
+
+
+
+list_dfs[1] #2018-06-30 23:58:00
 list_dfs[7] #7/1/2019 0:01
 
 #create date column - extract year from start_time
@@ -90,11 +141,21 @@ add_datecol <- function(df)
 
 list_dfs <- lapply(list_dfs, add_datecol)
 
-head(list_dfs)
+#add day of the week
+#wday component of a POSIXlt object is the numeric weekday, label=TRUE for days
+#wday("2018-03-31", label = TRUE)
+add_dowcol <- function(df)
+  df %>% mutate (
+    start_dow = wday(start_date, label = TRUE)
+  )
+
+list_dfs <- lapply(list_dfs, add_dowcol)
+
+head(list_dfs[12])
+
 #check
 list_dfs[6] 
 list_dfs[10]
-
 
 #create year and quarter column
 add_yearcol <- function(df)
@@ -114,6 +175,10 @@ add_quartercol <- function(df)
 )
 
 list_dfs <- lapply(list_dfs, add_quartercol)
+
+# Clean time
+# strptime {base} convert between character representations and objects of classes "POSIXlt" and "POSIXct" representing calendar dates and times.
+strftime(x = "7/1/2019 0:01", format = "%I%p")
 
 #LOAD INDEGO STATION INFO CSV
 stationtable <- read.csv(file = 'miscdata/indego-stations-2021-01-01.csv')
