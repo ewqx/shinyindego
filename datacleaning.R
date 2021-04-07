@@ -166,7 +166,8 @@ fmt_df_dt <- function(x)
 
 list_dfs <- lapply(list_dfs, fmt_df_dt)
 
-head(list_dfs[[1]])
+head(list_dfs[[1]]$start_time)
+head(list_dfs[[12]]$start_time)
 
 fmt_df_dt2 <- function(x) 
   x %>% mutate_at(vars(start_time, end_time), as.POSIXct, format = '%d%b%Y%H%M', tz = "UTC")
@@ -184,6 +185,7 @@ list_dfs <- lapply(list_dfs, fmt_df_dt2)
 lapply(list_dfs[[8]], class)
 head(list_dfs[[7]])
 
+#add column with date only
 add_datecol <- function(df)
   df %>% mutate(
     start_date = as.Date(start_time))
@@ -201,6 +203,8 @@ add_dowcol <- function(df)
   )
 
 list_dfs <- lapply(list_dfs, add_dowcol)
+
+unique(list_dfs[[1]]$start_dow) #levels
 
 head(list_dfs[1])
 #check
@@ -239,7 +243,7 @@ list_dfs[[12]]
 
 add_hrcol <- function(df)
   df %>% mutate( 
-    start_time_hr = hour(start_time)
+    sthr = hour(start_time)
   )
 
 list_dfs <- lapply(list_dfs, add_hrcol) 
@@ -248,31 +252,31 @@ list_dfs[[6]]
 
 rfmt_hrcol <- function(df)
   df %>% mutate(
-    sthour = case_when(
-      start_time_hr == 00 ~ "12AM",
-      start_time_hr == 1 ~ "01AM",
-      start_time_hr == 2 ~ "02AM",
-      start_time_hr == 3 ~ "03AM",
-      start_time_hr == 4 ~ "04AM",
-      start_time_hr == 5 ~ "05AM",
-      start_time_hr == 6 ~ "06AM",
-      start_time_hr == 07 ~ "07AM",
-      start_time_hr == 08 ~ "08AM",
-      start_time_hr == 09 ~ "09AM",
-      start_time_hr == 10 ~ "10AM",
-      start_time_hr == 11 ~ "11AM",
-      start_time_hr == 12 ~ "12PM",
-      start_time_hr == 13 ~ "01PM",
-      start_time_hr == 14 ~ "02PM",
-      start_time_hr == 15 ~ "03PM",
-      start_time_hr == 16 ~ "04PM",
-      start_time_hr == 17 ~ "05PM",
-      start_time_hr == 18 ~ "06PM",
-      start_time_hr == 19 ~ "07PM",
-      start_time_hr == 20 ~ "08PM",
-      start_time_hr == 21 ~ "09PM",
-      start_time_hr == 22 ~ "10PM",
-      start_time_hr == 23 ~ "11PM",
+    start_time_hour = case_when(
+      sthr == 00 ~ "12AM",
+      sthr == 1 ~ "01AM",
+      sthr == 2 ~ "02AM",
+      sthr == 3 ~ "03AM",
+      sthr == 4 ~ "04AM",
+      sthr == 5 ~ "05AM",
+      sthr == 6 ~ "06AM",
+      sthr == 07 ~ "07AM",
+      sthr == 08 ~ "08AM",
+      sthr == 09 ~ "09AM",
+      sthr == 10 ~ "10AM",
+      sthr == 11 ~ "11AM",
+      sthr == 12 ~ "12PM",
+      sthr == 13 ~ "01PM",
+      sthr == 14 ~ "02PM",
+      sthr == 15 ~ "03PM",
+      sthr == 16 ~ "04PM",
+      sthr == 17 ~ "05PM",
+      sthr== 18 ~ "06PM",
+      sthr == 19 ~ "07PM",
+      sthr == 20 ~ "08PM",
+      sthr == 21 ~ "09PM",
+      sthr == 22 ~ "10PM",
+      sthr == 23 ~ "11PM",
       TRUE ~ NA_character_)
   )
 
@@ -280,27 +284,31 @@ list_dfs <- lapply(list_dfs, rfmt_hrcol)
 
 list_dfs[[7]]
 
-#unique(list_dfs[[10]]$sthour2)
+#unique(list_dfs[[10]]$)
+
+alldfs <- rbindlist(list_dfs)
+
+head(alldfs)
+sum(is.na(alldfs))
+sum(is.null(alldfs))
+
+write.csv(alldfs, file = 'miscdata/alldfs.csv')
+  
+#factorize cols
 
 
-breaks <- c("05AM", "11PM", "12PM", "16PM", "17PM", "18PM")
+#$start_time_hour <- 
+#  factor(
+#    x = $start_time_hour, 
+#    levels = c(
+#      "12AM", "01AM", "02AM", "03AM", "04AM", "05AM",
+#      "06AM", "07AM", "08AM", "09AM", "10AM", "11AM",
+#      "12PM", "01PM", "02PM", "03PM", "04PM", "05PM",
+#      "06PM", "07PM", "08PM", "09PM", "10PM", "11PM"),
+#    ordered = TRUE)
 
-add_timecatcol <- function(df)
-  df %>% mutate(
-  start_timecat = 
-  case_when(
-  between(start_time_hr, breaks[1],breaks[2]) ~"morning",
-  between(start_time_hr, breaks[3],breaks[4]) ~"afternoon",
-  between(start_time_hr, breaks[5],breaks[6]) ~"evening"))
 
-list_dfs <- lapply(list_dfs, add_timecatcol)
 
-map(list_dfs,  pluck, "start_timecat") %>%
-  flatten_chr %>%
-  unique
-
-lapply(list_dfs[[1]], class)
-head(list_dfs[[2]])
 
 ####  LOAD INDEGO STATION INFO CSV
 stationtable <- read.csv(file = 'miscdata/indego-stations-2021-01-01.csv')
@@ -528,6 +536,9 @@ library(sf)
 #phl_nbhds <- read_sf("./miscdata/Neighborhoods_Philadelphia.geojson")
 #head(phl_nbhds$geometry)
 #colnames(phl_nbhds)
+
+#https://gis.stackexchange.com/questions/282750/identify-polygon-containing-point-with-r-sf-package
+#https://gis.stackexchange.com/questions/265339/intersect-coordinates-with-spatial-polygon-with-r
 
 library(geojsonsf)
 phl_nbhds <- geojsonsf::geojson_sf("https://raw.githubusercontent.com/azavea/geo-data/master/Neighborhoods_Philadelphia/Neighborhoods_Philadelphia.geojson")
