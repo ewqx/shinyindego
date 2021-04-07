@@ -296,7 +296,6 @@ write.csv(alldfs, file = 'miscdata/alldfs.csv')
   
 #factorize cols
 
-
 #$start_time_hour <- 
 #  factor(
 #    x = $start_time_hour, 
@@ -307,6 +306,49 @@ write.csv(alldfs, file = 'miscdata/alldfs.csv')
 #      "06PM", "07PM", "08PM", "09PM", "10PM", "11PM"),
 #    ordered = TRUE)
 
+### PLOT 
+
+#install.packages("wesanderson")
+library(wesanderson)
+library("viridis")
+
+colnames(alldfs)
+#prevent scientific notation
+options(scipen=999)
+
+# plot histogram of quarterly bike trips, fill color by year
+hist_quarter_year <- ggplot(alldfs, aes(x = quarter)) + 
+  stat_count(aes(fill= start_year)) +
+  #scale_fill_manual(values = wes_palette("Darjeeling2", n = 3))+
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE) +
+  labs(
+    title = "Frequency of Bike Trips by Quarter",
+    subtitle = "Fill color by year (2018-2020)",
+    x = "Quarter",
+    y = "Volume",
+    fill = "Year"
+  )
+
+#plot                  
+hist_quarter_year
+
+# plot histogram of yearly bike trips, fill color by pass type
+hist_year_pass <- ggplot(alldfs, aes(x = start_year)) + 
+  stat_count(aes(fill= passholder_type)) +
+  #scale_fill_manual(values = wes_palette("BottleRocket1", n = 6))+
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE) +
+  labs(
+    title = "Frequency of Bike Trips by Year",
+    subtitle = "Fill color by Pass Type",
+    x = "Year",
+    y = "Volume",
+    fill = "Pass Type"
+  )
+
+# plot
+hist_year_pass
 
 
 
