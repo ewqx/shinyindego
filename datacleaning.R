@@ -43,6 +43,7 @@ csv_fpaths <- paste0('./data/', csv_fnames, sep = '')
 
 #read each of the file paths in the vector into a dataframe object, storing all the data frames into a single list
 list_dfs <- lapply(csv_fpaths, fread)
+
 #all_dfs <- lapply( csv_fpaths, FUN = function( fp ) read.csv( fp, stringsAsFactors = F ) )
 
 #head(list_dfs)
@@ -80,12 +81,28 @@ lapply(list_dfs[[7]], class)
 # 4. separate out weekday/ weekend
 
 
-# GET UNIQUE VALUES in the following columns: passholder_type plan_duration trip_route_category
+# GET UNIQUE VALUES in the following columns: passholder_type plan_duration trip_route_category bike_type
 library(dplyr)
 library(purrr) #https://www.rdocumentation.org/packages/purrr/versions/0.2.5/topics/flatten
 
+map(list_dfs,  pluck, "bike_type") %>%
+  flatten_chr %>%
+unique
+#"standard" "electric"
+
+unique(list_dfs[[2]]$bike_type) 
+#2018 Q1 - NULL
+#2018 Q2 - NULL
+#2018 Q3 - "standard"
+#2018 Q4 - "standard" "electric"
+
+#add back bike_type and set to "standard" for 2018 Q1 and Q2
+
+list_dfs[[1]]$bike_type <- rep("standard", times = (nrow(list_dfs[[1]])))
+list_dfs[[2]]$bike_type <- rep("standard", times = (nrow(list_dfs[[2]])))
+
 map(list_dfs,  pluck, "passholder_type") %>%
-  flatten_chr %>%s
+  flatten_chr %>%
   unique
 
 #[1] "Indego30"     "Indego365"    "Walk-up"     
@@ -93,17 +110,31 @@ map(list_dfs,  pluck, "passholder_type") %>%
 #[7] "NULL"   
 
 sum(list_dfs[[6]]$passholder_type == "NULL") #35
-unique(list_dfs[[11]]$passholder_type)
+list_dfs <- list_dfs %>% discard(is.null)
+#list_dfs <- list_dfs[!sapply(list_dfs,is.null)]
+
+#remove na values
+list_dfs <- lapply(list_dfs, na.omit)
+sum(is.na(list_dfs))
+
+unique(list_dfs[[1]]$passholder_type)
 #2018 Q1 "Indego30"   "Indego365"  "Walk-up"  "IndegoFlex" "One Day Pass"
 #2018 Q2 "Indego30"   "Indego365"  "Walk-up"  "IndegoFlex" "Day Pass"  
 #2019 Q2 "Indego30"   "Indego365"  "Day Pass" "IndegoFlex" "NULL" "Walk-up"  
 #2019 Q3 "Indego30"   "Indego365"  "Day Pass" "IndegoFlex"
 #2020 Q3 "Indego30"   "Indego365"  "Day Pass" 
 
+#rename One Day Pass used in 2018 Q1 and Q2 dataset to Day Pass
+rename_colval <- function(df)
+  df %>% mutate(passholder_type = ifelse(as.character(passholder_type) == "One Day Pass", "Day Pass", as.character(passholder_type)))
+
+list_dfs <- lapply(list_dfs, rename_colval)
+head(list_dfs[[12]])
+
+#look at plan_duration
 map(list_dfs,  pluck, "plan_duration") %>%
   flatten_chr %>%
   unique
-
 #[1] "30"   "365"  "0"    "1"    "2"    "NULL"
 #[7] "180" 
 
@@ -120,11 +151,11 @@ map(list_dfs,  pluck, "trip_route_category") %>%
 #"One Way"    "Round Trip"
 
 
-
+#Check start_time format - different formats
 list_dfs[1] #2018-06-30 23:58:00
 list_dfs[7] #7/1/2019 0:01
 
-#create date column - extract year from start_time
+#clean date/time column - extract year from start_time
 clean_dt <- function(dt){
   require(lubridate)
   parse_date_time (dt, orders = c('YmdHMS','mdYHM') )
@@ -135,6 +166,24 @@ fmt_df_dt <- function(x)
 
 list_dfs <- lapply(list_dfs, fmt_df_dt)
 
+head(list_dfs[[1]])
+
+fmt_df_dt2 <- function(x) 
+  x %>% mutate_at(vars(start_time, end_time), as.POSIXct, format = '%d%b%Y%H%M', tz = "UTC")
+
+parse_dt <- function(dt){
+  require(lubridate)
+  parse_date_time (dt, orders = "Ymd HMS")
+}
+
+fmt_df_dt3 <- function(x) 
+  x %>% mutate_at(vars(start_time, end_time), parse_dt)
+
+list_dfs <- lapply(list_dfs, fmt_df_dt2)
+
+lapply(list_dfs[[8]], class)
+head(list_dfs[[7]])
+
 add_datecol <- function(df)
   df %>% mutate(
     start_date = as.Date(start_time))
@@ -142,7 +191,9 @@ add_datecol <- function(df)
 list_dfs <- lapply(list_dfs, add_datecol)
 
 #add day of the week
-#wday component of a POSIXlt object is the numeric weekday, label=TRUE for days
+#https://stackoverflow.com/questions/9216138/find-the-day-of-a-week
+#label=TRUE for days
+#returns the days as a factor, so the days will be in the correct order
 #wday("2018-03-31", label = TRUE)
 add_dowcol <- function(df)
   df %>% mutate (
@@ -151,11 +202,10 @@ add_dowcol <- function(df)
 
 list_dfs <- lapply(list_dfs, add_dowcol)
 
-head(list_dfs[12])
-
+head(list_dfs[1])
 #check
-list_dfs[6] 
-list_dfs[10]
+head(list_dfs[6])
+head(list_dfs[12])
 
 #create year and quarter column
 add_yearcol <- function(df)
@@ -178,9 +228,81 @@ list_dfs <- lapply(list_dfs, add_quartercol)
 
 # Clean time
 # strptime {base} convert between character representations and objects of classes "POSIXlt" and "POSIXct" representing calendar dates and times.
-strftime(x = "7/1/2019 0:01", format = "%I%p")
 
-#LOAD INDEGO STATION INFO CSV
+#add hour column - categorize start_time into hours of the day
+list_dfs[[12]]
+#strftime("7/1/2019 0:01", format = "%H%p") #"12AM"
+#strftime("01:52:00 2018-01-01", format = "%H%p") #error
+#strftime("2018-01-01 01:52:00", format = "%H%p") #"01AM"
+#hour("2018-01-01 01:52:00")
+#parse_date_time("2018-01-01 01:52:00", orders= "Ymd HMS")
+
+add_hrcol <- function(df)
+  df %>% mutate( 
+    start_time_hr = hour(start_time)
+  )
+
+list_dfs <- lapply(list_dfs, add_hrcol) 
+
+list_dfs[[6]]
+
+rfmt_hrcol <- function(df)
+  df %>% mutate(
+    sthour = case_when(
+      start_time_hr == 00 ~ "12AM",
+      start_time_hr == 1 ~ "01AM",
+      start_time_hr == 2 ~ "02AM",
+      start_time_hr == 3 ~ "03AM",
+      start_time_hr == 4 ~ "04AM",
+      start_time_hr == 5 ~ "05AM",
+      start_time_hr == 6 ~ "06AM",
+      start_time_hr == 07 ~ "07AM",
+      start_time_hr == 08 ~ "08AM",
+      start_time_hr == 09 ~ "09AM",
+      start_time_hr == 10 ~ "10AM",
+      start_time_hr == 11 ~ "11AM",
+      start_time_hr == 12 ~ "12PM",
+      start_time_hr == 13 ~ "01PM",
+      start_time_hr == 14 ~ "02PM",
+      start_time_hr == 15 ~ "03PM",
+      start_time_hr == 16 ~ "04PM",
+      start_time_hr == 17 ~ "05PM",
+      start_time_hr == 18 ~ "06PM",
+      start_time_hr == 19 ~ "07PM",
+      start_time_hr == 20 ~ "08PM",
+      start_time_hr == 21 ~ "09PM",
+      start_time_hr == 22 ~ "10PM",
+      start_time_hr == 23 ~ "11PM",
+      TRUE ~ NA_character_)
+  )
+
+list_dfs <- lapply(list_dfs, rfmt_hrcol)
+
+list_dfs[[7]]
+
+#unique(list_dfs[[10]]$sthour2)
+
+
+breaks <- c("05AM", "11PM", "12PM", "16PM", "17PM", "18PM")
+
+add_timecatcol <- function(df)
+  df %>% mutate(
+  start_timecat = 
+  case_when(
+  between(start_time_hr, breaks[1],breaks[2]) ~"morning",
+  between(start_time_hr, breaks[3],breaks[4]) ~"afternoon",
+  between(start_time_hr, breaks[5],breaks[6]) ~"evening"))
+
+list_dfs <- lapply(list_dfs, add_timecatcol)
+
+map(list_dfs,  pluck, "start_timecat") %>%
+  flatten_chr %>%
+  unique
+
+lapply(list_dfs[[1]], class)
+head(list_dfs[[2]])
+
+####  LOAD INDEGO STATION INFO CSV
 stationtable <- read.csv(file = 'miscdata/indego-stations-2021-01-01.csv')
 head(stationtable)
 nrow(stationtable) #157 stations
