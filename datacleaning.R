@@ -296,15 +296,28 @@ write.csv(alldfs, file = 'miscdata/alldfs.csv')
   
 #factorize cols
 
-#$start_time_hour <- 
-#  factor(
-#    x = $start_time_hour, 
-#    levels = c(
-#      "12AM", "01AM", "02AM", "03AM", "04AM", "05AM",
-#      "06AM", "07AM", "08AM", "09AM", "10AM", "11AM",
-#      "12PM", "01PM", "02PM", "03PM", "04PM", "05PM",
-#      "06PM", "07PM", "08PM", "09PM", "10PM", "11PM"),
-#    ordered = TRUE)
+alldfs$start_time_hour <- 
+  factor(
+    x = alldfs$start_time_hour, 
+    levels = c(
+      "12AM", "01AM", "02AM", "03AM", "04AM", "05AM",
+      "06AM", "07AM", "08AM", "09AM", "10AM", "11AM",
+      "12PM", "01PM", "02PM", "03PM", "04PM", "05PM",
+      "06PM", "07PM", "08PM", "09PM", "10PM", "11PM"),
+    ordered = TRUE)
+
+ alldfs = filter(alldfs,  passholder_type != "IndegoFlex" & passholder_type != "NULL")
+unique(alldfs$passholder_type)
+
+alldfs = alldfs %>%
+  mutate(start_month = month(start_time, label=TRUE))
+
+alldfs = alldfs %>%
+  mutate(start_dow1 = wday(start_time, label = TRUE, week_start = 1))
+
+within(alldfs, rm("sthr"))
+
+dimnames(alldfs)
 
 ### PLOT 
 
@@ -350,10 +363,90 @@ hist_year_pass <- ggplot(alldfs, aes(x = start_year)) +
 # plot
 hist_year_pass
 
+colnames(alldfs)
+
+# plot histogram of bike trips by day of the week, fill color by pass type
+hist_dow_pass <- ggplot(alldfs, aes(x = start_dow1)) + 
+  stat_count(aes(fill= passholder_type)) +
+  #scale_fill_manual(values = wes_palette("BottleRocket1", n = 6))+
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE) +
+  labs(
+    title = "Frequency of Bike Trips by  Day of Week",
+    subtitle = "Fill color by Pass Type",
+    x = "Year",
+    y = "Volume",
+    fill = "Pass Type"
+  )
+
+# plot
+hist_dow_pass
+
+# plot histogram of bike trips by hour, fill using dow
+hist_hr_dow <- ggplot(alldfs, aes(x = start_time_hour)) + 
+  stat_count(aes(fill= start_dow1)) +
+  #scale_fill_manual(values = wes_palette("BottleRocket1", n = 6))+
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE) +
+  labs(
+    title = "Frequency of Bike Trips by Hour of the day",
+    subtitle = "Fill color by Day of the week",
+    x = "Hour of the day",
+    y = "Volume",
+    fill = "Day"
+  )
+
+# plot
+hist_hr_dow
+
+
+
+#https://forcats.tidyverse.org/
+# plot histogram of station use
+#  Reordering a factor by the frequency of values.
+hist_station <- ggplot(alldfs, aes(x = fct_infreq(start_stations))) 
+
+#two-way table
+#count trips originated from each station by station ID
+station_use <- table(alldfs$start_station)
+tail(station_use)
+summary(station_use)
+max(station_use) #45740
+min(station_use) #2
+names(which.max(station_use))
+names(which.min(station_use))
+dimnames(station_use)
+dim(station_use)
+str(station_use)
+names(station_use)
+class(station_use) #"table"
+station_use[["3010"]][1] #45740
+station_use[["3226"]][1] #2
+station_use[2] #3005 11056 
+station_use[[2]] #11056
+names(station_use[2]) #3005
+names(station_use)[which(station_use == 45740)] #3010
+
+unique(alldfs$start_station)
+dim(station_use) #155
+
+#load indego station table (with coordinates)
+stationtable <- read.csv(file = 'miscdata/idgstations.csv') 
+stationtable <- na.omit(stationtable)
+sum(is.na(stationtable))
+dim(stationtable) #164   7
+dimnames(stationtable)
+tail(stationtable) #4/23/2015 #12/24/2020
+lapply(stationtable, class)
+as.Date(stationtable$Go_live_date, tryFormats = "%m/%d/%&")
+
+stationtable_names <- stationtable %>% select(Station_ID, Station_Name)
+
+alldfs <- full_join(stationtable_names, alldfs, by = c("Station_ID" = "Station_ID"))
 
 
 ####  LOAD INDEGO STATION INFO CSV
-stationtable <- read.csv(file = 'miscdata/indego-stations-2021-01-01.csv')
+#stationtable <- read.csv(file = 'miscdata/indego-stations-2021-01-01.csv')
 head(stationtable)
 nrow(stationtable) #157 stations
 lapply(stationtable, class)
