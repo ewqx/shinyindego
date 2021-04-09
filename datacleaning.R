@@ -289,8 +289,39 @@ list_dfs[[7]]
 alldfs <- rbindlist(list_dfs)
 
 head(alldfs)
+colnames(alldfs)
 sum(is.na(alldfs))
 sum(is.null(alldfs))
+
+alldfs <- alldfs %>% mutate(
+  start_dow_cat = case_when(
+    start_dow1 == "Sun" | start_dow1 == "Sat" ~ "Weekend",
+    TRUE ~ "Weekday"))
+
+max(suballdfs$duration) #1440 min
+min(alldfs$duration) #1 min
+median(alldfs$duration) #13 min
+mean(alldfs$duration) #25.28671 min
+summary(alldfs$duration)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#1.00    8.00   13.00   25.29   24.00 1440.00 
+#suballdfs = filter(alldfs, !(duration %in% c(1440, 1)))
+
+alldfs <- alldfs %>% mutate(
+  start_duration_cat = factor((duration %/% 30)+1, ordered=TRUE))
+head(alldfs$start_duration_cat)
+#[1] 1 1 1 1 1 1
+#49 Levels: 1 < 2 < 3 < 4 < 5 < 6 < 7 < 8 < 9 < ... < 49
+# 1: trips 30 minutes and under
+# 2: trips 60 min and under
+summary(alldfs$start_duration_cat)
+barplot(table(alldfs$start_duration_cat))
+
+alldfs <- alldfs %>% mutate(
+  start_dur_60 = case_when(
+    duration <= 30 ~ "Short",
+    duration %in% 31:60 ~ "Medium",
+    TRUE ~ "Long")) 
 
 #write.csv(alldfs, file = 'miscdata/alldfs.csv')
 
@@ -516,6 +547,127 @@ plot(hist_hr_stat)
 alldfs$start_station <- as.factor(alldfs$start_station)
 class(alldfs$start_station)
 
+#start station by quarter 
+hist_stat_q <- ggplot(alldfs, aes(x = start_station)) + 
+  stat_count(aes(fill= quarter)) +
+  scale_fill_brewer(palette = "BuPu", direction=-1) +
+  scale_color_brewer(palette = "BuPu", direction=-1) +
+  labs(
+    title = "Volume of Bike Trips by Station",
+    subtitle = "Fill color: quarter",
+    x = "Station",
+    y = "Volume",
+    fill = "quarter"
+  ) +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
+plot(hist_stat_q)
+
+#start station by hour of the day 
+class(alldfs$start_time_hour)
+levels(alldfs$start_time_hour)
+
+hrno <- 24
+hrcolor <- colorRampPalette(brewer.pal(8, "Set2"))(hrno)
+
+hist_sstat_hr <- ggplot(alldfs, aes(x = start_station)) + 
+  stat_count(aes(fill= start_time_hour)) +
+  scale_fill_manual(values = hrcolor) +
+  labs(
+    title = "Volume of Bike Trips by Start station",
+    subtitle = "Fill color: hour",
+    x = "Station",
+    y = "Volume",
+    fill = "hour"
+  ) +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
+plot(hist_sstat_hr)
+
+# plot station by trip_route category
+hist_stat_trc <- ggplot(alldfs, aes(x = start_station)) + 
+  stat_count(aes(fill= trip_route_category)) +
+  scale_fill_brewer(palette = "Set2") +
+ # scale_color_brewer(palette = "BuPu", direction=-1) +
+  labs(
+    title = "Volume of Bike Trips by Station",
+    subtitle = "Fill color: trip route category",
+    x = "Station",
+    y = "Volume",
+    fill = "trc"
+  ) +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
+plot(hist_stat_trc)
+
+# plot station by pass type
+hist_stat_pass <- ggplot(alldfs, aes(x = start_station)) + 
+  stat_count(aes(fill= trip_route_category)) +
+  scale_fill_brewer(palette = "Set2") +
+  # scale_color_brewer(palette = "BuPu", direction=-1) +
+  labs(
+    title = "Volume of Bike Trips by Station",
+    subtitle = "Fill color: passholder_type",
+    x = "Station",
+    y = "Volume",
+    fill = "pass type"
+  ) +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
+plot(hist_stat_pass)
+
+colnames(alldfs)
+
+# plot station by weekend/weekday
+sub_alldfs <- subset(alldfs, start_station!= "3057")
+
+hist_stat_dowcat <- ggplot(alldfs, aes(x = start_station)) + 
+  stat_count(aes(fill= start_dow_cat)) +
+  scale_fill_brewer(palette = "Set2") +
+  # scale_color_brewer(palette = "BuPu", direction=-1) +
+  labs(
+    title = "Volume of Bike Trips by Station",
+    subtitle = "Fill color: day category",
+    x = "Station",
+    y = "Volume",
+    fill = "day category"
+  ) +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
+plot(hist_stat_dowcat)
+
+colnames(alldfs)
+
+#trip station by trip duration cat
+hist_stat_dur <- ggplot(alldfs, aes(x = start_station)) + 
+  stat_count(aes(fill= duration)) +
+  #scale_fill_brewer(palette = "Set2") +
+ scale_color_brewer(palette = "BuPu", direction=-1) +
+  labs(
+    title = "Volume of Bike Trips by Station",
+    subtitle = "Fill color: duration",
+    x = "Station",
+    y = "Volume",
+    fill = "duration"
+  ) +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
+plot(hist_stat_dur)
+
+
+### station usage
 station_use <- table(alldfs$start_station_name)
 tail(station_use)
 summary(station_use)
@@ -537,7 +689,7 @@ colnames(alldfs)
 station_use <- table(alldfs$start_station)
 tail(station_use)
 summary(station_use)
-max(station_use) #45740
+max(station_use) #210999
 min(station_use) #2
 names(which.max(station_use))
 names(which.min(station_use))
@@ -551,7 +703,7 @@ station_use[["3226"]][1] #2
 station_use[2] #3005 11056 
 station_use[[2]] #11056
 names(station_use[2]) #3005
-names(station_use)[which(station_use == 45740)] #3010
+names(station_use)[which(station_use == 210999)] #3057
 
 unique(alldfs$start_station) #155
 head(alldfs)
@@ -592,7 +744,6 @@ sum(is.na(alldfs))
 #https://forcats.tidyverse.org/
 # plot histogram of station use
 #  Reordering a factor by the frequency of values.
-hist()
 
 #start/end station heatmap
 
