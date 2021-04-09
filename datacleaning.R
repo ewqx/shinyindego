@@ -292,10 +292,12 @@ head(alldfs)
 sum(is.na(alldfs))
 sum(is.null(alldfs))
 
-write.csv(alldfs, file = 'miscdata/alldfs.csv')
-  
-#factorize cols
+#write.csv(alldfs, file = 'miscdata/alldfs.csv')
 
+#### READ alldfs
+alldfs <- read.csv(file = '../alldfs.csv') 
+
+#factorize cols
 alldfs$start_time_hour <- 
   factor(
     x = alldfs$start_time_hour, 
@@ -306,7 +308,8 @@ alldfs$start_time_hour <-
       "06PM", "07PM", "08PM", "09PM", "10PM", "11PM"),
     ordered = TRUE)
 
- alldfs = filter(alldfs,  passholder_type != "IndegoFlex" & passholder_type != "NULL")
+#delete IndegoFlex and null in passholder_type
+alldfs = filter(alldfs,  passholder_type != "IndegoFlex" & passholder_type != "NULL")
 unique(alldfs$passholder_type)
 
 alldfs = alldfs %>%
@@ -315,9 +318,13 @@ alldfs = alldfs %>%
 alldfs = alldfs %>%
   mutate(start_dow1 = wday(start_time, label = TRUE, week_start = 1))
 
-within(alldfs, rm("sthr"))
+alldfs <- within(alldfs, rm("sthr"))
 
 dimnames(alldfs)
+tail(alldfs)
+
+### rewrite alldfs
+#write.csv(alldfs, file = '../alldfs.csv') 
 
 ### PLOT 
 
@@ -399,12 +406,8 @@ hist_hr_dow <- ggplot(alldfs, aes(x = start_time_hour)) +
 # plot
 hist_hr_dow
 
-
-
-#https://forcats.tidyverse.org/
-# plot histogram of station use
-#  Reordering a factor by the frequency of values.
-hist_station <- ggplot(alldfs, aes(x = fct_infreq(start_stations))) 
+##### READ alldfs
+alldfs <- read.csv(file = '../alldfs.csv') 
 
 #two-way table
 #count trips originated from each station by station ID
@@ -427,7 +430,8 @@ station_use[[2]] #11056
 names(station_use[2]) #3005
 names(station_use)[which(station_use == 45740)] #3010
 
-unique(alldfs$start_station)
+unique(alldfs$start_station) #155
+head(alldfs)
 dim(station_use) #155
 
 #load indego station table (with coordinates)
@@ -438,11 +442,142 @@ dim(stationtable) #164   7
 dimnames(stationtable)
 tail(stationtable) #4/23/2015 #12/24/2020
 lapply(stationtable, class)
-as.Date(stationtable$Go_live_date, tryFormats = "%m/%d/%&")
+#as.Date(stationtable$Go_live_date, tryFormats = "%m/%d/%&")
 
+#extract out station_id and station_name to join with alldfs
 stationtable_names <- stationtable %>% select(Station_ID, Station_Name)
 
-alldfs <- full_join(stationtable_names, alldfs, by = c("Station_ID" = "Station_ID"))
+#join station names with start_station in alldfs
+alldfs <- full_join(stationtable_names, alldfs, by = c("Station_ID" = "start_station"))
+colnames(alldfs) 
+#rename(.data, new_name = old_name) 
+alldfs <- rename(alldfs, start_station_name = Station_Name)
+alldfs <- rename(alldfs, start_station = Station_ID)
+#alldfs <- within(alldfs, rm(Station_ID))
+#join station names with end_station in alldfs
+alldfs <- full_join(stationtable_names, alldfs, by = c("Station_ID" = "end_station"))
+#rename
+alldfs <- rename(alldfs, end_station_name = Station_Name)
+alldfs <- rename(alldfs, end_station = Station_ID)
+tail(alldfs) 
+alldfs <- na.omit(alldfs)
+sum(is.na(alldfs))
+
+#write.csv(alldfs, file = "./alldfs.csv")
+
+### PLOT STATIONS
+#https://forcats.tidyverse.org/
+# plot histogram of station use
+#  Reordering a factor by the frequency of values.
+hist()
+
+#start/end station heatmap
+
+
+#alldfs <- read.csv(file="./alldfs.csv")
+
+#subset years
+df2018 <- subset(alldfs, start_year == 2018, select = c("start_station", "end_station"))
+head(df2018)
+station_heatmap_tab18 <- table(df2018$start_station, df2018$end_station)
+dim(station_heatmap_tab18)
+station_heatmap_df18 <- data.frame(station_heatmap_tab18[1:134, 1:134])
+names(station_heatmap_df18) <- c("start_station", "end_station", "volume")
+max(station_heatmap_df18$volume) #24327
+min(station_heatmap_df18$volume) #0
+median(station_heatmap_df18$volume) #10
+mean(station_heatmap_df18$volume) #43.37297
+
+head(station_heatmap_tab18)
+barplot(station_heatmap_tab18)
+summary(station_heatmap_df18$volume)
+#Min.  1st Qu.   Median     Mean    3rd Qu.     Max. 
+#0.00     2.00    10.00    43.37    42.00       24327.00 
+
+alldfs$start_station <- as.factor(alldfs$start_station)
+alldfs$end_station <- as.factor(alldfs$end_station)
+
+colnames(alldfs)
+#plot volume bar plot
+ggplot(data.frame(alldfs), aes(x=start_station)) +
+  geom_bar()
+
+ggplot(data.frame(alldfs), aes(x=end_station)) +
+  geom_bar()
+
+
+heatmap2018 <- 
+  ggplot(data = station_heatmap_df18, mapping = aes(x=start_station, y=end_station, fill=volume)) +
+  geom_tile() + 
+  scale_fill_gradient(low = "white", high = "navy", limits=c(0,2000)) +
+  labs(
+    title = "Heatmap of Trips Volumes Between Stations",
+    x = "Starting Station",
+    y = "Ending Station",
+    fill = "Trip Volume") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  coord_fixed()
+
+heatmap2018
+
+
+#alldfs station heatmap
+station_heatmap_tab <- table(alldfs$start_station, alldfs$end_station)
+dim(station_heatmap_tab)
+head(station_heatmap_tab)
+
+station_heatmap_df <- data.frame(station_heatmap_tab[1:154, 1:153])
+names(station_heatmap_df) <- c("start_station", "end_station", "volume")
+head(station_heatmap_df)
+tail(station_heatmap_df)
+max(station_heatmap_df$volume) #120114
+min(station_heatmap_df$volume) #0
+
+station_heatmap_df <- filter(station_heatmap_df, volume != "120114")
+
+gheatmap_base <- 
+  ggplot(data = station_heatmap_df, mapping = aes(x=start_station, y=end_station, fill=volume)) +
+  geom_tile() + 
+  scale_fill_continuous(high = "#132B43", low = "#56B1F7") +
+  #scale_color_viridis(option = "D") +
+  labs(
+    title = "Heatmap of Trips Between Stations",
+    x = "Starting Station",
+    y = "Ending Station",
+    fill = "Trip Volume") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 10)) + 
+  coord_fixed()
+
+gheatmap_base
+
+
+
+tail(alldfs)
+sum(is.na(alldfs))
+alldfs <- na.omit(alldfs)
+dim(alldfs) #2311345      24
+
+#check if bike is both standard and electric 
+check_bike_type <- intersect(
+  alldfs$bike_id[alldfs$bike_type == "standard"], 
+  alldfs$bike_id[alldfs$bike_type == "electric"])
+check_bike_type #"15067"
+#delete bike
+alldfs <- filter(alldfs, bike_id != "15067")
+length(unique(alldfs$bike_id)) #2769
+
+#number of bikes
+length(unique(alldfs$bike_id)) #2769 
+bike_use <- table(alldfs$bike_id)
+max(bike_use) #2199
+min(bike_use) #0
+names(bike_use)[which(bike_use == 2199)] #"11170"
+bikes <- alldfs %>% select(bike_id, bike_type)
+tail(bikes)
+dim(bikes)
+#remove duplicates
+bikes <- bikes[!duplicated(bikes$bike_id),]
+dim(bikes) #2769 2
 
 
 ####  LOAD INDEGO STATION INFO CSV
