@@ -309,22 +309,33 @@ alldfs$start_time_hour <-
     ordered = TRUE)
 
 #delete IndegoFlex and null in passholder_type
-alldfs = filter(alldfs,  passholder_type != "IndegoFlex" & passholder_type != "NULL")
+alldfs = filter(alldfs,  passholder_type != "IndegoFlex" & passholder_type != "NULL" & passholder_type != "Walk-up")
 unique(alldfs$passholder_type)
 
 alldfs = alldfs %>%
   mutate(start_month = month(start_time, label=TRUE))
 
-alldfs = alldfs %>%
-  mutate(start_dow1 = wday(start_time, label = TRUE, week_start = 1))
+#alldfs = alldfs %>%
+#  mutate(start_dow1 = wday(start_time, label = TRUE, week_start = 1))s
+
+
+unique(alldfs$start_time_hour) 
+unique(alldfs$start_dow1) 
+#[1] Tue Thu Sun Mon Wed Sat Fri
+# Levels: Fri Mon Sat Sun Thu Tue Wed
+
+alldfs$start_dow1 <- ordered(alldfs$start_dow1, levels=c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"))
+
+colnames(alldfs)
 
 alldfs <- within(alldfs, rm("sthr"))
+alldfs <- within(alldfs, rm("start_dow", "X.2", "X", "X.1"))
 
 dimnames(alldfs)
 tail(alldfs)
 
 ### rewrite alldfs
-#write.csv(alldfs, file = '../alldfs.csv') 
+write.csv(alldfs, file = '../alldfs.csv') 
 
 ### PLOT 
 
@@ -390,24 +401,136 @@ hist_dow_pass <- ggplot(alldfs, aes(x = start_dow1)) +
 hist_dow_pass
 
 # plot histogram of bike trips by hour, fill using dow
+#hist_hr_dow <- ggplot(alldfs, aes(x = start_time_hour)) + 
+#  stat_count(aes(fill= start_dow1)) +
+#  #scale_fill_manual(values = wes_palette("BottleRocket1", n = 6))+
+#  scale_color_viridis(discrete = TRUE, option = "D")+
+#  scale_fill_viridis(discrete = TRUE) +
+#  labs(
+#    title = "Frequency of Bike Trips by Hour of the day",
+#    subtitle = "Fill color by Day of the week",
+#    x = "Hour of the day",
+#    y = "Volume",
+#    fill = "Day"
+#  )
+
+# plot
+#hist_hr_dow
+
+library(RColorBrewer)
+
+
 hist_hr_dow <- ggplot(alldfs, aes(x = start_time_hour)) + 
   stat_count(aes(fill= start_dow1)) +
-  #scale_fill_manual(values = wes_palette("BottleRocket1", n = 6))+
-  scale_color_viridis(discrete = TRUE, option = "D")+
-  scale_fill_viridis(discrete = TRUE) +
+  #scale_color_viridis(discrete = TRUE, option = "magma")+
+  #scale_fill_viridis(discrete = TRUE, option = "magma") +
+  scale_fill_brewer(palette = "BuPu", direction=-1) +
+  scale_color_brewer(palette = "BuPu", direction=-1) +
   labs(
-    title = "Frequency of Bike Trips by Hour of the day",
-    subtitle = "Fill color by Day of the week",
+    title = "Volume of Bike Trips by Hour of the day",
+    subtitle = "Fill color: Day of the week",
     x = "Hour of the day",
     y = "Volume",
     fill = "Day"
-  )
+  ) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
 
-# plot
-hist_hr_dow
+plot(hist_hr_dow)
+
+#hr of day by pass type
+hist_hr_pass <- ggplot(alldfs, aes(x = start_time_hour)) + 
+  stat_count(aes(fill= passholder_type)) +
+  #scale_color_viridis(discrete = TRUE, option = "magma")+
+  #scale_fill_viridis(discrete = TRUE, option = "magma") +
+  scale_fill_brewer(palette = "BuPu", direction=-1) +
+  scale_color_brewer(palette = "BuPu", direction=-1) +
+  labs(
+    title = "Volume of Bike Trips by Hour of the day",
+    subtitle = "Fill color: Pass Type",
+    x = "Hour of the day",
+    y = "Volume",
+    fill = "Day"
+  ) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+
+plot(hist_hr_pass)
+
+#hour by quarter - winter months = less usage
+hist_hr_q <- ggplot(alldfs, aes(x = start_time_hour)) + 
+  stat_count(aes(fill= quarter)) +
+  scale_fill_brewer(palette = "BuPu", direction=-1) +
+  scale_color_brewer(palette = "BuPu", direction=-1) +
+  labs(
+    title = "Volume of Bike Trips by Hour of the day",
+    subtitle = "Fill color: Pass Type",
+    x = "Hour of the day",
+    y = "Volume",
+    fill = "Day"
+  ) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+
+plot(hist_hr_q)
+
+#hour by year
+hist_hr_yr <- ggplot(alldfs, aes(x = start_time_hour)) + 
+  stat_count(aes(fill= start_year)) +
+  scale_fill_brewer(palette = "Purples", direction=-1) +
+  #scale_color_brewer(palette = "Set2", direction=-1) +
+  labs(
+    title = "Volume of Bike Trips by Hour of the day",
+    subtitle = "Fill color: Pass Type",
+    x = "Hour of the day",
+    y = "Volume",
+    fill = "Day"
+  ) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+
+plot(hist_hr_yr)
+
+class(alldfs$start_year)
+alldfs$start_year <- as.factor(alldfs$start_year)
+#write.csv(alldfs, file="../alldfs.csv")
+
+length(unique(alldfs$start_station)) #154
+#stationno <- 154
+#stationcolor <- colorRampPalette(brewer.pal(8, "Set2"))(stationno)
+library(randomcoloR)
+n <- 154
+randompalette <- distinctColorPalette(n)
+
+hist_hr_stat <- ggplot(alldfs, aes(x = start_time_hour)) + 
+  stat_count(aes(fill= start_station_name)) +
+  scale_fill_manual(values = randompalette) +
+  #scale_color_brewer(palette = "Set2", direction=-1) +
+  labs(
+    title = "Volume of Bike Trips by Hour of the day",
+    subtitle = "Fill color: Start Station",
+    x = "Hour of the day",
+    y = "Volume",
+    fill = "Stations"
+  ) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position="none")  
+
+plot(hist_hr_stat)
+
+alldfs$start_station <- as.factor(alldfs$start_station)
+class(alldfs$start_station)
+
+station_use <- table(alldfs$start_station_name)
+tail(station_use)
+summary(station_use)
+max(station_use) #45740
+names(which.max(station_use)) #"Philadelphia Museum of Art"
+names(which.min(station_use)) #"2nd & Norris"
+
+end_station_use <- table(alldfs$end_station_name)
+names(which.max(end_station_use)) #"Philadelphia Museum of Art"
+names(which.min(end_station_use)) #""Penn Treaty Park"
+
+colnames(alldfs)
 
 ##### READ alldfs
-alldfs <- read.csv(file = '../alldfs.csv') 
+#alldfs <- read.csv(file = '../alldfs.csv') 
 
 #two-way table
 #count trips originated from each station by station ID
