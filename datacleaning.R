@@ -308,22 +308,30 @@ summary(alldfs$duration)
 #suballdfs = filter(alldfs, !(duration %in% c(1440, 1)))
 
 alldfs <- alldfs %>% mutate(
-  start_duration_cat = factor((duration %/% 30)+1, ordered=TRUE))
-head(alldfs$start_duration_cat)
+  duration_cat = factor((duration %/% 30)+1, ordered=TRUE))
+tail(alldfs)
 #[1] 1 1 1 1 1 1
 #49 Levels: 1 < 2 < 3 < 4 < 5 < 6 < 7 < 8 < 9 < ... < 49
 # 1: trips 30 minutes and under
 # 2: trips 60 min and under
-summary(alldfs$start_duration_cat)
-barplot(table(alldfs$start_duration_cat))
+summary(alldfs$duration_cat)
+barplot(table(alldfs$duration_cat))
 
 alldfs <- alldfs %>% mutate(
-  start_dur_60 = case_when(
+  duration_cat2 = case_when(
     duration <= 30 ~ "Short",
     duration %in% 31:60 ~ "Medium",
     TRUE ~ "Long")) 
+barplot(table(alldfs$duration_cat2))
 
-#write.csv(alldfs, file = 'miscdata/alldfs.csv')
+alldfs$duration_cat2 <- ordered(alldfs$duration_cat2, levels=c("Short", "Medium", "Long"))
+
+head(alldfs,100)
+
+alldfs <- within(alldfs, rm(start_duration_cat2))
+
+#write.csv(alldfs, file = '../alldfs.csv')
+
 
 #### READ alldfs
 alldfs <- read.csv(file = '../alldfs.csv') 
@@ -381,7 +389,6 @@ options(scipen=999)
 # plot histogram of quarterly bike trips, fill color by year
 hist_quarter_year <- ggplot(alldfs, aes(x = quarter)) + 
   stat_count(aes(fill= start_year)) +
-  #scale_fill_manual(values = wes_palette("Darjeeling2", n = 3))+
   scale_color_viridis(discrete = TRUE, option = "D")+
   scale_fill_viridis(discrete = TRUE) +
   labs(
@@ -648,9 +655,9 @@ plot(hist_stat_dowcat)
 
 colnames(alldfs)
 
-#trip station by trip duration cat
+#station by duration cat2
 hist_stat_dur <- ggplot(alldfs, aes(x = start_station)) + 
-  stat_count(aes(fill= duration)) +
+  stat_count(aes(fill= duration_cat2)) +
   #scale_fill_brewer(palette = "Set2") +
  scale_color_brewer(palette = "BuPu", direction=-1) +
   labs(
@@ -666,6 +673,7 @@ hist_stat_dur <- ggplot(alldfs, aes(x = start_station)) +
 
 plot(hist_stat_dur)
 
+suballdfs <- filter(alldfs, start_station != "3057")
 
 ### station usage
 station_use <- table(alldfs$start_station_name)
@@ -686,28 +694,57 @@ colnames(alldfs)
 
 #two-way table
 #count trips originated from each station by station ID
-station_use <- table(alldfs$start_station)
-tail(station_use)
-summary(station_use)
-max(station_use) #210999
-min(station_use) #2
-names(which.max(station_use))
-names(which.min(station_use))
-dimnames(station_use)
-dim(station_use)
-str(station_use)
-names(station_use)
-class(station_use) #"table"
-station_use[["3010"]][1] #45740
-station_use[["3226"]][1] #2
-station_use[2] #3005 11056 
-station_use[[2]] #11056
-names(station_use[2]) #3005
-names(station_use)[which(station_use == 210999)] #3057
+sstation_use <- table(alldfs$start_station)
+tail(sstation_use)
+summary(sstation_use)
+max(sstation_use) #210999
+min(sstation_use) #2
+names(which.max(sstation_use)) #"3057"
+names(which.min(sstation_use)) # "3226"
+dimnames(sstation_use)
+dim(sstation_use)
+str(sstation_use)
+names(sstation_use)
+class(sstation_use) #"table"
+sstation_use[["3010"]][1] #45740
+sstation_use[["3226"]][1] #2
+sstation_use[2] #3005 11056 
+sstation_use[[2]] #11056
+names(sstation_use[2]) #3005
+names(sstation_use)[which(sstation_use == 210999)] #3057
+
+alldfs$start_station <- as.factor(alldfs$start_station)
+head(alldfs$start_station)
+
+alldfs <- alldfs %>%
+  group_by(start_station_name) %>%
+  mutate (start_station_volume = n())
+
+summary(alldfs$start_station_volume)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#2   15415   23001   38898   34623  210999 
+
+alldfs <- alldfs %>%
+  mutate(
+    start_station_use = 
+    case_when(
+      start_station_volume <=  15000 ~ "underutilized",
+      start_station_volume %in% 15001:25000 ~ "fair utilization",
+      start_station_volume %in% 25001:50000 ~ "adequate utilization",
+      TRUE ~ "max utilization")) #210999
+
+head(alldfs$start_station_use, 100)
+unique(alldfs$start_station_use)
+stationusetab <- table(alldfs$start_station_use)
+#adequate utilization   fair utilization 
+#782981                 877206 
+#max utilization        underutilized 
+#274035                 621644 
 
 unique(alldfs$start_station) #155
 head(alldfs)
 dim(station_use) #155
+
 
 #load indego station table (with coordinates)
 stationtable <- read.csv(file = 'miscdata/idgstations.csv') 
@@ -738,7 +775,7 @@ tail(alldfs)
 alldfs <- na.omit(alldfs)
 sum(is.na(alldfs))
 
-#write.csv(alldfs, file = "./alldfs.csv")
+#write.csv(alldfs, file = "../alldfs.csv")
 
 ### PLOT STATIONS
 #https://forcats.tidyverse.org/
@@ -824,6 +861,7 @@ gheatmap_base <-
 
 gheatmap_base
 
+categoricalVars <- c("trip_route_category", "passholder_type","trip_route_category", "start_year", "quarter", "start_time_hour", "start_month", "start_dow1", "start_dow_cat", "duration_cat2", "start_station_use")
 
 
 tail(alldfs)
