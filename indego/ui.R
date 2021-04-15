@@ -1,9 +1,10 @@
 library(shiny)
-library(shinydashboard)
+library(ggplot2)
+library(plotly)
 
 
 ui <- fluidPage(
-  plotOutput("trip_dow_pass"),
+  plotlyOutput("trip_dow_pass"),
   selectInput(
     inputId = "color_select",
     label = "Select Categorical Variable",
