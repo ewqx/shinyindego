@@ -330,11 +330,14 @@ head(alldfs,100)
 
 alldfs <- within(alldfs, rm(start_duration_cat2))
 
+colnames(alldfs)
+alldfs <- within(alldfs, rm(X.1))
+
 #write.csv(alldfs, file = '../alldfs.csv')
 
 
 #### READ alldfs
-alldfs <- read.csv(file = '../alldfs.csv') 
+#alldfs <- read.csv(file = '../alldfs.csv') 
 
 #factorize cols
 alldfs$start_time_hour <- 
@@ -862,6 +865,29 @@ gheatmap_base <-
 gheatmap_base
 
 categoricalVars <- c("trip_route_category", "passholder_type","trip_route_category", "start_year", "quarter", "start_time_hour", "start_month", "start_dow1", "start_dow_cat", "duration_cat2", "start_station_use")
+
+lapply(alldfs, class)
+class(alldfs$start_station_use)
+
+alldfs$start_station_use <- as.factor(alldfs$start_station_use)
+
+print(levels(alldfs$start_station_use))
+
+alldfs$start_station_use <- factor(alldfs$start_station_use, ordered = TRUE, levels = c("underutilized", "fair utilization", "adequate utilization", "max utilization")) 
+
+class(alldfs$start_month)
+print(levels(alldfs$start_month))
+alldfs$start_month <- factor(alldfs$start_month, ordered = TRUE, levels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
+
+class(alldfs$start_time_hour)
+
+print(levels(alldfs$start_year))
+alldfs$start_year <- 
+  factor(
+    x = alldfs$start_year, 
+    levels = c(2018, 2019, 2020),
+    ordered = TRUE)
+
 
 
 tail(alldfs)
