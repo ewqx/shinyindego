@@ -557,6 +557,13 @@ plot(hist_hr_stat)
 alldfs$start_station <- as.factor(alldfs$start_station)
 class(alldfs$start_station)
 
+stationVars <- c("trip_route_category", "passholder_type", "start_year", "quarter", "start_time_hour", "start_month", "start_dow1", "start_dow_cat", "duration_cat2", "start_station_use", "bike_type")
+
+head(alldfs$start_dow1)
+
+#filter function
+suballdfs <- filter(alldfs, start_station != "3057")
+
 #start station by quarter 
 hist_stat_q <- ggplot(alldfs, aes(x = start_station)) + 
   stat_count(aes(fill= quarter)) +
