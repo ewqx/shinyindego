@@ -24,6 +24,8 @@ subdir <- "Documents/dsa/Mod04DataAnalysisR/12-R_ShinyProj/shinyindego"
 setwd(here(subdir))
 getwd()
 
+#alldfs <- read.csv(file = '../alldfs.csv') 
+
 # LOAD DATA
 ### Indego Data ###
 # Data source: https://www.rideindego.com/about/data/
@@ -331,9 +333,11 @@ head(alldfs,100)
 alldfs <- within(alldfs, rm(start_duration_cat2))
 
 colnames(alldfs)
-alldfs <- within(alldfs, rm(X.1))
+alldfs <- within(alldfs, rm(X.2))
+alldfs <- within(alldfs, rm(duration_cat))
+head(alldfs)
 
-#write.csv(alldfs, file = '../alldfs.csv')
+#write.csv(alldfs, file = '../alldfs2.csv')
 
 
 #### READ alldfs

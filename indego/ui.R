@@ -1,7 +1,3 @@
-library(shiny)
-library(ggplot2)
-library(plotly)
-library(shinydashboard)
 
 
 #ui <- fluidPage(
@@ -15,7 +11,6 @@ ui <-  dashboardPage(
   )),
   
   dashboardBody(
-  
   tabItems(
   #first tab content
   tabItem(tabName = "quartertab",
