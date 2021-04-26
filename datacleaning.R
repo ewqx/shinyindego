@@ -1007,6 +1007,22 @@ phlcensustracts <- read.csv(file = 'miscdata/censustracts.csv')
 library(geojsonio)
 phlct <- rgdal::readOGR("https://opendata.arcgis.com/datasets/8bc0786524a4486bb3cf0f9862ad0fbf_0.geojson")
 
+require(sp)
+phlct2 <- geojsonio::geojson_read("https://opendata.arcgis.com/datasets/8bc0786524a4486bb3cf0f9862ad0fbf_0.geojson",what = "sp")
+
+library(sf)
+library(tidyverse)
+library(geojsonsf)
+
+phlct3 <- geojson_sf("https://opendata.arcgis.com/datasets/8bc0786524a4486bb3cf0f9862ad0fbf_0.geojson")
+
+phlct3_data <- merge(phlct3, phlcensus, by.x='GEOID10', by.y= 'GEOID')
+pal <- colorNumeric("viridis", NULL)
+
+leaflet(phlct3_data) %>%
+  addTiles() %>%
+  addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 1, fillColor = ~pal(B01003_001.POP))
+
 leaflet(phlct) %>%
   addTiles() %>%
   addPolygons(stroke = TRUE, weight = 1, color = "#444444", fill = FALSE)
