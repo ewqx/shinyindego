@@ -14,7 +14,7 @@ server <- function(input, output, session) {
     ss <- ggplot(alldfs) + 
       aes_string(x = "start_station") + 
       stat_count(aes_string(fill = input$var_select)) +
-      #scale_fill_brewer(palette = "BuPu", direction=-1) +
+      #scale_fill_brewer(palette = "BuPu",s direction=-1) +
       #scale_color_brewer(palette = "BuPu", direction=-1) +
       scale_color_viridis(discrete = TRUE, option = "D") +
       scale_fill_viridis(discrete = TRUE) +
