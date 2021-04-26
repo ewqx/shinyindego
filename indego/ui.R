@@ -33,7 +33,9 @@ ui <-  dashboardPage(
       #tab content
       tabItem(tabName = "maptab",
               fluidRow(
-                h1("Station Map")
+                h1("Station Map"),
+                p(),
+                leafletOutput("station_map")
               )),
       
       #tab content

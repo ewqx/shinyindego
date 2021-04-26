@@ -445,6 +445,23 @@ hist_dow_pass <- ggplot(alldfs, aes(x = start_dow1)) +
 # plot
 hist_dow_pass
 
+
+#plot station map
+
+station_map <- leaflet() %>%
+  setView(lng = -75.165222, lat = 39.952583, zoom = 6.5) %>%
+  addProviderTiles("Esri.WorldStreetMap") %>%
+  addCircleMarkers(
+    lng = $start_lon, lat = $start_lat,
+    radius = sqrt($start_station_volume)/10,
+    color = "#000000",
+    fillColor = "#ffffff",
+    fillOpacity = 0.5,
+    popup = paste0(
+      "Station Name: ", $start_station_name,
+      "Volume: ", $start_station_volume,
+      "Usage: ", $start_station_use))
+
 # plot histogram of bike trips by hour, fill using dow
 #hist_hr_dow <- ggplot(alldfs, aes(x = start_time_hour)) + 
 #  stat_count(aes(fill= start_dow1)) +
@@ -930,7 +947,7 @@ dim(bikes) #2769 2
 
 
 ####  LOAD INDEGO STATION INFO CSV
-#stationtable <- read.csv(file = 'miscdata/indego-stations-2021-01-01.csv')
+stationtable <- read.csv(file = 'miscdata/indego-stations-2021-01-01.csv')
 head(stationtable)
 nrow(stationtable) #157 stations
 lapply(stationtable, class)
@@ -939,7 +956,24 @@ lapply(stationtable, class)
 #$Go_live_date [1] "factor"
 #$Status [1] "factor"
 
-stations_df <- lapply(list_dfs, function(x) x%>% select(start_station, start_lat, start_lon, end_station, end_lat, end_lon)) 
+stationsdf <- alldfs %>% select(start_station, start_station_name, start_station_volume, start_station_use)
+#remove rows with the same station id
+stationsdf <- stationsdf %>% distinct(start_station, .keep_all = TRUE)
+#check no of rows
+nrow(stationsdf) #154
+
+idgstationfips <- read.csv(file = 'miscdata/idgstations_fips.csv')
+idgstationfips <- idgstationfips %>% distinct(Station_ID, .keep_all = TRUE)
+idgstationfips$Station_ID <- as.factor(idgstationfips$Station_ID)
+
+#join volume/usage columns with fips
+stationsdf <- full_join(stationsdf, idgstationfips, by = c("start_station" = "Station_ID"))
+
+stationsdf <- within(stationsdf, rm("X"))
+stationsdf <- na.omit(stationsdf) #153
+
+#write.csv(stationsdf,'../stationsdf.csv')
+
 
 head(stations_df)
 #remove duplicated elements in list of dataframes

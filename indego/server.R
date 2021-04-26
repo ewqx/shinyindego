@@ -1,6 +1,25 @@
 
 server <- function(input, output, session) {
   
+  output$station_map <- renderLeaflet({ 
+    leaflet() %>%
+      setView(lng = -75.165222, lat = 39.952583, zoom = 6.5) %>%
+      addProviderTiles("Esri.WorldStreetMap") %>%
+      addCircleMarkers(
+        lng = alldfs$start_lon, lat = alldfs$start_lat,
+        radius = sqrt(alldfs$start_station_volume)/10,
+        color = "#000000",
+        fillColor = "#ffffff",
+        fillOpacity = 0.5,
+        popup = paste0(
+          "Station Name: ", alldfs$start_station_name,
+          "Volume: ", alldfs$start_station_volume,
+          "Usage: ", alldfs$start_station_use
+        )
+      )
+  })
+  
+  
   output$trip_dow_pass <- renderPlotly({
     p <- ggplot(alldfs) + 
       aes_string(x = "quarter") + 

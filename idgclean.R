@@ -11,6 +11,7 @@ library(semantic.dashboard)
 library(viridis)
 library(RColorBrewer)
 library(randomcoloR)
+library(leaflet)
 
 ## SETWD
 cwd <- here::here()
@@ -21,6 +22,7 @@ getwd()
 ## DATA
 #2018, 2019, 2020 - Q1, Q2, Q3, Q4 
 alldfs <- read.csv(file = '../alldfs.csv') 
+stationsdfs <- read.csv(file = '../stationdfs.csv') 
 # add census dat
 
 ## FACTORIZE
