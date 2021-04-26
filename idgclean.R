@@ -12,6 +12,9 @@ library(viridis)
 library(RColorBrewer)
 library(randomcoloR)
 library(leaflet)
+library(geojsonio)
+
+options(scipen=999)
 
 ## SETWD
 cwd <- here::here()
@@ -21,9 +24,11 @@ getwd()
 
 ## DATA
 #2018, 2019, 2020 - Q1, Q2, Q3, Q4 
-alldfs <- read.csv(file = '../alldfs.csv') 
-stationsdfs <- read.csv(file = '../stationdfs.csv') 
-# add census dat
+alldfs <- read.csv(file = '../alldfs2.csv') 
+stationsdf <- read.csv(file = 'miscdata/stationsdf.csv') 
+phlcensus <- read.csv(file = 'miscdata/phlcensus.csv') 
+phlct <- rgdal::readOGR("https://opendata.arcgis.com/datasets/8bc0786524a4486bb3cf0f9862ad0fbf_0.geojson")
+
 
 ## FACTORIZE
 lapply(alldfs, class)

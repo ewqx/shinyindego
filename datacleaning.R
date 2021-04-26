@@ -333,11 +333,11 @@ head(alldfs,100)
 alldfs <- within(alldfs, rm(start_duration_cat2))
 
 colnames(alldfs)
-alldfs <- within(alldfs, rm(X.2))
+alldfs <- within(alldfs, rm(X.1))
 alldfs <- within(alldfs, rm(duration_cat))
 head(alldfs)
 
-#write.csv(alldfs, file = '../alldfs2.csv')
+write.csv(alldfs, file = '../alldfs2.csv')
 
 
 #### READ alldfs
@@ -1001,6 +1001,17 @@ idgstations <- full_join(stationtable, stations_df_tot, by = c("Station_ID" = "s
 
 #write.csv(idgstations,'miscdata/idgstations.csv')
 
+#CENSUS TRACT map
+phlcensustracts <- read.csv(file = 'miscdata/censustracts.csv')
+
+library(geojsonio)
+phlct <- rgdal::readOGR("https://opendata.arcgis.com/datasets/8bc0786524a4486bb3cf0f9862ad0fbf_0.geojson")
+
+leaflet(phlct) %>%
+  addTiles() %>%
+  addPolygons(stroke = TRUE, weight = 1, color = "#444444", fill = FALSE)
+
+
 #GET CENSUS TRACT OF STATIONS
 #https://stackoverflow.com/questions/51499410/retrieve-census-tract-from-coordinates
 
@@ -1130,6 +1141,7 @@ phl_commute_walked <- get_acs(geography = "tract", variables = "B08134_101", sta
 
 #Age proxy
 phl_workers16 <- get_acs(geography = "tract", variables = "B08016_001", state = "PA", county = "Philadelphia")
+
 
 head(phl_workers16$GEOID) #"42101000100" "42101000200" "42101000300" 
 head(phl_pop)
