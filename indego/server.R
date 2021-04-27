@@ -82,11 +82,11 @@ server <- function(input, output, session) {
                           library = "fa",
                           markerColor = setMarkerCol(stationsdf2)),
                         
-                        popup = paste0(
+                        label = paste0(
                           stationsdf2$start_station_name, 
-                          "<br>",
+                          " ",
                           "Trips: ", stationsdf2$start_station_volume,
-                          "<br>",
+                          " ",
                           "Usage: ", stationsdf2$start_station_use)) %>%
    
    addCircleMarkers(data = phlbslstations, color = "orange", radius = 3,
@@ -97,6 +97,19 @@ server <- function(input, output, session) {
      addCircleMarkers(data = phlvehcrashes, radius = 6, color = "brown", fillOpacity = 0.1, label = paste0("Count:",  phlvehcrashes$bicycle_death_count + phlvehcrashes$bicycle_maj_inj_count), group="Vehicular Crashes (Bikes)") %>%
      addCircleMarkers(data = phlbusshelters, lat = phlbusshelters$LAT., lng = phlbusshelters$LONG., color = "green", radius = 2, stroke = FALSE, fillOpacity = 1, group = "Bus Stops", label = paste0(phlbusshelters$ADDRESS))
   })
+  
+
+# draw circle onclick - radius=800 - approximate 0.5mi radius  
+  observeEvent(input$testmap_click, {
+    click <- input$testmap_click
+    text <- paste("Latitude ", round(click$lat,2), "Longtitude ", round(click$lng,2))
+    
+    leafletProxy("testmap") %>%
+      clearGroup("new_point") %>%
+      addCircles(click$lng, click$lat, radius=800, color="red", group = "new_point")
+    
+  })
+  
   
 
   output$station_map <- renderLeaflet({ 
