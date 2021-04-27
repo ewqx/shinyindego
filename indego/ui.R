@@ -18,7 +18,10 @@ ui <-  dashboardPage(
                icon = icon("dashboard")),
       menuItem("Charts - by stations", 
                 tabName = "stationstab", 
-                icon = icon("th"))
+                icon = icon("th")),
+      menuItem("Census data", 
+               tabName = "censustab", 
+               icon = icon("map"))
   )),
   
   dashboardBody(
@@ -56,6 +59,14 @@ ui <-  dashboardPage(
             inputId = "var_select",
             label = "Select Variable",
             choices = stationVars
-      )))
+      ))),
+      
+      #tab content
+      tabItem(tabName = "censustab",
+              fluidRow(
+                h1("Census Tract Map"),
+                p(),
+                leafletOutput("census_map")
+              ))
   
 )))

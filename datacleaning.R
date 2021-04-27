@@ -449,18 +449,18 @@ hist_dow_pass
 #plot station map
 
 station_map <- leaflet() %>%
-  setView(lng = -75.165222, lat = 39.952583, zoom = 6.5) %>%
+  setView(lng = -75.165222, lat = 39.952583, zoom = 10) %>%
   addProviderTiles("Esri.WorldStreetMap") %>%
   addCircleMarkers(
-    lng = $start_lon, lat = $start_lat,
-    radius = sqrt($start_station_volume)/10,
+    lng = stationsdf$start_lon, lat = stationsdf$start_lat,
+    radius = sqrt(stationsdf$start_station_volume)/10,
     color = "#000000",
     fillColor = "#ffffff",
     fillOpacity = 0.5,
     popup = paste0(
-      "Station Name: ", $start_station_name,
-      "Volume: ", $start_station_volume,
-      "Usage: ", $start_station_use))
+      "Station Name: ", stationsdf$start_station_name,
+      "Volume: ", stationsdf$start_station_volume,
+      "Usage: ", stationsdf$start_station_use))
 
 # plot histogram of bike trips by hour, fill using dow
 #hist_hr_dow <- ggplot(alldfs, aes(x = start_time_hour)) + 
@@ -1016,16 +1016,78 @@ library(geojsonsf)
 
 phlct3 <- geojson_sf("https://opendata.arcgis.com/datasets/8bc0786524a4486bb3cf0f9862ad0fbf_0.geojson")
 
+#merge geojson and phl census data
 phlct3_data <- merge(phlct3, phlcensus, by.x='GEOID10', by.y= 'GEOID')
-pal <- colorNumeric("viridis", NULL)
 
-leaflet(phlct3_data) %>%
+class(phlct3_data)
+#[1] "sf" "data.frame"
+
+#write sf data/ simple features to file
+st_write(phlct3_data, "miscdata/phlct3_data.geojson")
+
+pal <- colorNumeric("viridis", NULL)
+pal2 <- colorNumeric("BuPu", NULL)
+
+leaflet(phlctpolydata) %>%
   addTiles() %>%
-  addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 1, fillColor = ~pal(B01003_001.POP))
+  addPolygons(stroke = TRUE, weight = 1, color = "#444444", smoothFactor = 0.3, fillOpacity = 1, fillColor = ~pal2((B01003_001.POP/ALAND10)*100), label = ~paste0(NAMELSAD10, ": ", 
+              formatC((B01003_001.POP/ALAND10)*100,"%", big.mark = ","))) %>%
+  addLegend(pal = pal2, values = ~((B01003_001.POP/ALAND10)*100), opacity = 1.0)
 
 leaflet(phlct) %>%
   addTiles() %>%
   addPolygons(stroke = TRUE, weight = 1, color = "#444444", fill = FALSE)
+
+
+#station map markers by usage
+
+setMarkerCol <- function(stationsdf) {
+  sapply(stationsdf$start_station_use, function(use) {
+    if ( use == "underutilized") {
+      'lightgray'
+    }
+    else if (use == "fair utilization") {
+      "lightblue"
+    }
+    else if (use == "adequate utilization") {
+      "blue"
+    }
+    else {"darkblue"}
+  })
+}
+
+icons <- awesomeIcons(
+  icon = 'map-marker-alt',
+  iconColor = "#FFFFFF",
+  library = 'fa',
+  markerColor = setMarkerCol(stationsdf)
+)
+
+leaflet(stationsdf) %>%
+  addProviderTiles("Stamen.TonerLite") %>%
+  setView(lng = -75.1640, lat = 39.9520, zoom = 12.5) %>%
+  addAwesomeMarkers(lng = stationsdf$start_lon, lat = stationsdf$start_lat, icon=icons, 
+                    popup = paste0(
+                      stationsdf$start_station_name, 
+                      "<br>",
+                      "Trips: ", stationsdf$start_station_volume,
+                      "<br>",
+                      "Usage: ", stationsdf$start_station_use))
+
+#stationusemap <- leaflet() %>%
+#  setView(lng = -75.165222, lat = 39.952583, zoom = 10) %>%
+#  addProviderTiles("Stamen.TonerLite") %>%
+#  addMarkers(
+#    lng = stationsdf$start_lon, lat = stationsdf$start_lat,
+#    radius = sqrt(stationsdf$start_station_volume)/10,
+#    color = "#000000",
+#    fillColor = "#ffffff",
+#    fillOpacity = 0.5,
+#    popup = paste0(
+#      "Station Name: ", stationsdf$start_station_name,
+#      "Volume: ", stationsdf$start_station_volume,
+#      "Usage: ", stationsdf$start_station_use))
+
 
 
 #GET CENSUS TRACT OF STATIONS

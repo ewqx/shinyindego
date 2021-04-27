@@ -13,6 +13,8 @@ library(RColorBrewer)
 library(randomcoloR)
 library(leaflet)
 library(geojsonio)
+library(sf)
+library(geojsonsf)
 
 options(scipen=999)
 
@@ -27,7 +29,8 @@ getwd()
 alldfs <- read.csv(file = '../alldfs2.csv') 
 stationsdf <- read.csv(file = 'miscdata/stationsdf.csv') 
 phlcensus <- read.csv(file = 'miscdata/phlcensus.csv') 
-phlct <- rgdal::readOGR("https://opendata.arcgis.com/datasets/8bc0786524a4486bb3cf0f9862ad0fbf_0.geojson")
+phlctpolydata <- geojson_sf('miscdata/phlct3_data.geojson')
+phlbikenetwork <- geojson_sf("https://opendata.arcgis.com/datasets/b5f660b9f0f44ced915995b6d49f6385_0.geojson")
 
 
 ## FACTORIZE
@@ -70,12 +73,41 @@ alldfs$start_station_use <- factor(alldfs$start_station_use, ordered = TRUE, lev
 #plan duration
 alldfs$plan_duration <- factor(alldfs$plan_duration, ordered = TRUE, levels = c(1, 30, 180, 365))
 
-## COLORS
+#station map markers by usage
+
+setMarkerCol <- function(stationsdf) {
+  sapply(stationsdf$start_station_use, function(use) {
+    if ( use == "underutilized") {
+      'lightgray'
+    }
+    else if (use == "fair utilization") {
+      "lightblue"
+    }
+    else if (use == "adequate utilization") {
+      "blue"
+    }
+    else {"darkblue"}
+  })
+}
+
+icons <- awesomeIcons(
+  icon = 'map-marker-alt',
+  iconColor = "#FFFFFF",
+  library = 'fa',
+  markerColor = setMarkerCol(stationsdf)
+)
+
+
+
+## COLORS/ PALETTES
 hrno <- 24
 hrcolor <- colorRampPalette(brewer.pal(8, "Set2"))(hrno)
 
-n <- 154
+n <- 153
 randompalette <- distinctColorPalette(n)
+
+pal <- colorNumeric("viridis", NULL)
+pal2 <- colorNumeric("BuPu", NULL)
 
 
 ## VARIABLES

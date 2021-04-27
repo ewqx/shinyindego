@@ -2,12 +2,30 @@
 server <- function(input, output, session) {
   
   output$station_map <- renderLeaflet({ 
-    leaflet(phlct) %>%
-      setView(lng = -75.165222, lat = 39.952583, zoom = 11) %>%
-      addTiles() %>%
-      addPolygons(stroke = TRUE, weight = 1, color = "#444444", fill = FALSE)
-      
+    stationvolmap <- leaflet(stationsdf) %>%
+      addProviderTiles("Stamen.TonerLite") %>%
+      setView(lng = -75.1640, lat = 39.9520, zoom = 12.5) %>%
+      addAwesomeMarkers(lng = stationsdf$start_lon, 
+                        lat = stationsdf$start_lat, 
+                        icon=icons, 
+                        popup = paste0(
+                          stationsdf$start_station_name, 
+                          "<br>",
+                          "Trips: ", stationsdf$start_station_volume,
+                          "<br>",
+                          "Usage: ", stationsdf$start_station_use))
   })
+  
+  output$census_map <- renderLeaflet({ 
+    census_map <- leaflet(phlctpolydata) %>%
+      addTiles() %>%
+      addPolygons(stroke = TRUE, weight = 1, color = "#444444", 
+                  smoothFactor = 0.3, fillOpacity = 1, 
+                  fillColor = ~pal2((B01003_001.POP/ALAND10)*100), 
+                  label = ~paste0(NAMELSAD10, ": ", 
+                  formatC((B01003_001.POP/ALAND10)*100,"%", big.mark = ","))) %>%
+      addLegend(pal = pal2, title = "pop density (%)", values = ~((B01003_001.POP/ALAND10)*100), opacity = 1.0)
+    })
   
   
   output$trip_dow_pass <- renderPlotly({
