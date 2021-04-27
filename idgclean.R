@@ -32,6 +32,7 @@ getwd()
 alldfs <- read.csv(file = '../alldfs2.csv') 
 stationsdf <- read.csv(file = 'miscdata/stationsdf.csv') 
 phlcensus <- read.csv(file = 'miscdata/phlcensus.csv') 
+phlbusshelters <- read.csv(file = 'miscdata/shelter_locations.csv') 
 phlctpolydata <- geojson_sf('miscdata/phlct3_data.geojson')
 phlbikenetwork <- geojson_sf("https://opendata.arcgis.com/datasets/b5f660b9f0f44ced915995b6d49f6385_0.geojson")
 phlbslstations <- geojson_sf("https://opendata.arcgis.com/datasets/2e9037fd5bef406488ffe5bb67d21312_0.geojson")
@@ -88,7 +89,7 @@ alldfs$plan_duration <- factor(alldfs$plan_duration, ordered = TRUE, levels = c(
 setMarkerCol <- function(x) {
   sapply(x$start_station_use, function(use) {
     if ( use == "underutilized") {
-      'white'
+      'lightgray'
     }
     else if (use == "fair utilization") {
       "lightblue"

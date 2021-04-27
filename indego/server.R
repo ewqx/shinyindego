@@ -7,17 +7,15 @@ server <- function(input, output, session) {
     leaflet() %>%
     addProviderTiles("Stamen.TonerLite") %>%
     setView(lng = -75.1640, lat = 39.9520, zoom = 11.5) %>%
-    addPolygons(data = phlctpolydata, stroke = FALSE, weight = 0.75, color = "#444444", smoothFactor = 0.3, group="Census Tracts") %>%
-    addPolylines(data = phlbikenetwork, stroke = TRUE, weight = 2, color = "cadetblue", fill = FALSE, group="Bike Lanes", popup = ~paste0(STREETNAME, '<br>', "Type: ", TYPE)) %>%
       addLayersControl(
-        overlayGroups =c("Census Tracts", "Bike Lanes","SEPTA Train Stations", "Vehicular Crashes involving bikes"),
+        overlayGroups =c("Census Data", "Subway Stations", "Bus Stops", "Vehicular Crashes (Bikes)", "Bike Lanes"),
         options = layersControlOptions(collapsed = FALSE)
-      )
+      ) 
   })
   
   output$censusdropdown <- renderUI({
-    choices <- c(censusVars, "None")
-    selectInput(inputId = "censusdropdown", label = "Census Col", choices = choices, selected = "None")
+    choices <- c(censusVars)
+    selectInput(inputId = "censusdropdown", label = "Census Col", choices = choices, selected = "pop density")
   })
   
   observeEvent(input$censusdropdown, {
@@ -43,13 +41,18 @@ server <- function(input, output, session) {
       ctfill <- (phlctpolydata$B08134_061.CM_PUB/phlctpolydata$B08016_001.WORKERS16)*100
     } else if (cddsel == 'commute-car(%)'){
       ctfill <- (phlctpolydata$B08134_011.CM_CAR/phlctpolydata$B08016_001.WORKERS16)*100
-    } 
-    else { ctfill <- phlctpolydata$B19013_001.INCOME }
+    } else { ctfill = NULL  }
     
     leafletProxy("testmap") %>%
-      addPolygons(data = phlctpolydata, stroke = TRUE, weight = 1, 
-                  color = "#444444", smoothFactor = 0.3, fillOpacity = 0.8, 
-                  fillColor = ~pal2(ctfill))
+      clearShapes() %>%
+      clearControls() %>%
+      addPolygons(data = phlctpolydata, stroke = TRUE, weight = 0.5, 
+                  color = "white", smoothFactor = 0.3, fillOpacity = input$oprange, 
+                  fillColor = ~pal2(ctfill),
+                  label = ~paste0(NAMELSAD10, ": ", 
+                                  formatC((ctfill), big.mark = ",")), group = "Census Data") %>%
+      addLegend(pal = pal2, title = cddsel, values = ctfill, opacity = 1) %>%
+      addPolylines(data = phlbikenetwork, color = "cadetblue", group = "Bike Lanes", weight = 2)
   })
   
   output$sdropdown <- renderUI({
@@ -86,9 +89,13 @@ server <- function(input, output, session) {
                           "<br>",
                           "Usage: ", stationsdf2$start_station_use)) %>%
    
-   addCircleMarkers(data = phlbslstations, color = "orange", radius = 3, stroke = FALSE, fillOpacity = 0.8, group="SEPTA Train Stations") %>%
-     addCircleMarkers(data = phlmflstations, color = "blue", radius = 3, stroke = FALSE, fillOpacity = 0.8, group="SEPTA Train Stations") %>%
-     addCircleMarkers(data = phlvehcrashes, radius = 2, stroke = FALSE, color = "brown", fillOpacity = 0.5, group="Vehicular Crashes involving bikes")
+   addCircleMarkers(data = phlbslstations, color = "orange", radius = 3,
+                    stroke = FALSE, fillOpacity = 0.8, 
+                    group="Subway Stations", 
+                    label = paste0(phlbslstations$Station, " ", "Minority Area: ", phlbslstations$Minority_Area,  " ", "Low-income Area: ", phlbslstations$Low_Income_Area)) %>%
+     addCircleMarkers(data = phlmflstations, color = "blue", radius = 3, stroke = FALSE, fillOpacity = 0.8, group="Subway Stations", label = paste0(phlmflstations$Station, " ", "Minority Area: ", phlmflstations$Minority_Area,  " ", "Low-income Area: ", phlmflstations$Low_Income_Area)) %>%
+     addCircleMarkers(data = phlvehcrashes, radius = 6, color = "brown", fillOpacity = 0.1, label = paste0("Count:",  phlvehcrashes$bicycle_death_count + phlvehcrashes$bicycle_maj_inj_count), group="Vehicular Crashes (Bikes)") %>%
+     addCircleMarkers(data = phlbusshelters, lat = phlbusshelters$LAT., lng = phlbusshelters$LONG., color = "green", radius = 2, stroke = FALSE, fillOpacity = 1, group = "Bus Stops", label = paste0(phlbusshelters$ADDRESS))
   })
   
 

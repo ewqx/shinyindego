@@ -75,10 +75,16 @@ ui <-  dashboardPage(
       #tab content
       tabItem(tabName = "testtab",
               fluidRow(
-                h1("Test Leaflet Proxy Map"),
-                uiOutput("sdropdown"),
-                uiOutput("censusdropdown"),
-                leafletOutput("testmap", width="100%",height="750px")
+                h1("_Indego Map")),
+              fluidRow(
+                box(width = 5,
+                    uiOutput("sdropdown")),
+                box(width = 5,
+                uiOutput("censusdropdown")),
+                box(width = 5,
+                sliderInput("oprange", "Opacity", min = 0, max = 1, value = 0, step = 0.25))),
+              fluidRow(
+                leafletOutput("testmap", width="100%",height="500px")
               ))
   
 )))
