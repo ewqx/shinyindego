@@ -1078,6 +1078,15 @@ leaflet(stationsdf) %>%
                       "<br>",
                       "Usage: ", stationsdf$start_station_use))
 
+
+
+path <- "https://phl.carto.com/api/v2/sql?q=SELECT%20*%20FROM%20crash_data_collision_crash_2007_2017%20WHERE%20bicycle_death_count%20%3E%200%20OR%20bicycle_maj_inj_count%20%3E%200" 
+
+request <- GET(path)
+request$status_code
+response <- content(request, as = "text", encoding = "UTF-8")
+phlvehcrashes <- fromJSON(response) %>% data.frame()
+
 #stationusemap <- leaflet() %>%
 #  setView(lng = -75.165222, lat = 39.952583, zoom = 10) %>%
 #  addProviderTiles("Stamen.TonerLite") %>%

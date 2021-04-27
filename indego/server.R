@@ -7,30 +7,31 @@ server <- function(input, output, session) {
     leaflet() %>%
     addProviderTiles("Stamen.TonerLite") %>%
     setView(lng = -75.1640, lat = 39.9520, zoom = 11.5) %>%
-    addPolygons(data = phlctpolydata, stroke = TRUE, weight = 0.75, color = "#444444", smoothFactor = 0.3, group="Census Tracts") %>%
+    addPolygons(data = phlctpolydata, stroke = FALSE, weight = 0.75, color = "#444444", smoothFactor = 0.3, group="Census Tracts") %>%
     addPolylines(data = phlbikenetwork, stroke = TRUE, weight = 2, color = "cadetblue", fill = FALSE, group="Bike Lanes", popup = ~paste0(STREETNAME, '<br>', "Type: ", TYPE)) %>%
       addLayersControl(
-        overlayGroups =c("Census Tracts", "Bike Lanes"),
-        options = layersControlOptions(collapsed=FALSE)
+        overlayGroups =c("Census Tracts", "Bike Lanes","SEPTA Train Stations"),
+        options = layersControlOptions(collapsed = FALSE)
       )
   })
   
   output$sdropdown <- renderUI({
-    choices <- as.character(unique(stationsdf$start_station_use))  
-    choices <- c('All', choices)
-    selectInput(inputId = "sdropdown", label = "Station Usage", choices = choices, selected = "All")
+    choices <- as.character(unique(sort(stationsdf$start_station_use)))  
+    choices <- c('All', choices, 'Clear')
+    selectInput(inputId = "sdropdown", label = "Station Usage", choices = choices, selected = "Clear")
   })
   
   observeEvent(input$sdropdown, {
     sddsel = input$sdropdown
     
-    if (sddsel != 'All'){
-      stationsdf2 <- stationsdf[stationsdf$start_station_use == sddsel, ]
-    } else {
+    if (sddsel == 'All'){
       stationsdf2 <- stationsdf
+    } 
+    else {
+      stationsdf2 <- stationsdf[stationsdf$start_station_use == sddsel, ]
     }
     
-    leafletProxy("testmap") %>%
+   leafletProxy("testmap") %>%
       clearMarkers() %>%
       addAwesomeMarkers(data=stationsdf2, lng = stationsdf2$start_lon, 
                         lat = stationsdf2$start_lat, 
@@ -44,8 +45,17 @@ server <- function(input, output, session) {
                           "<br>",
                           "Trips: ", stationsdf2$start_station_volume,
                           "<br>",
-                          "Usage: ", stationsdf2$start_station_use))
+                          "Usage: ", stationsdf2$start_station_use)) %>%
+   
+   addCircleMarkers(data = phlbslstations, color = "orange", radius = 5, stroke = FALSE, fillOpacity = 0.5, group="SEPTA Train Stations") %>%
+     addCircleMarkers(data = phlmflstations, color = "blue", radius = 5, stroke = FALSE, fillOpacity = 0.5, group="SEPTA Train Stations") 
   })
+  
+
+  
+  
+  
+  
   
   output$station_map <- renderLeaflet({ 
     stationmap <- leaflet() %>%

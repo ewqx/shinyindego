@@ -15,6 +15,9 @@ library(leaflet)
 library(geojsonio)
 library(sf)
 library(geojsonsf)
+library(httr)
+library(jsonlite)
+
 
 options(scipen=999)
 
@@ -31,6 +34,12 @@ stationsdf <- read.csv(file = 'miscdata/stationsdf.csv')
 phlcensus <- read.csv(file = 'miscdata/phlcensus.csv') 
 phlctpolydata <- geojson_sf('miscdata/phlct3_data.geojson')
 phlbikenetwork <- geojson_sf("https://opendata.arcgis.com/datasets/b5f660b9f0f44ced915995b6d49f6385_0.geojson")
+phlbslstations <- geojson_sf("https://opendata.arcgis.com/datasets/2e9037fd5bef406488ffe5bb67d21312_0.geojson")
+phlmflstations <- geojson_sf("https://opendata.arcgis.com/datasets/8c6e2575c8ad46eb887e6bb35825e1a6_0.geojson")
+
+phlvehcrashes <- geojson_sf("https://phl.carto.com/api/v2/sql?q=SELECT+*+FROM+crash_data_collision_crash_2007_2017&filename=crash_data_collision_crash_2007_2017&format=geojson&skipfields=cartodb_id")
+phlvehcrashes <- select(phlvehcrashes, "dec_lat", "dec_long", "bicycle_death_count", "bicycle_maj_inj_count", "vehicle_count", "person_count", "injury_count", "fatal_count", "crash_year", "crash_month", "day_of_week", "hour_of_day")
+phlvehcrashes <- filter(phlvehcrashes, bicycle_death_count > 0 | bicycle_maj_inj_count > 0)
 
 
 ## FACTORIZE
@@ -69,6 +78,7 @@ alldfs$start_time_hour <-
 #station usage
 alldfs$start_station_use <- as.factor(alldfs$start_station_use)
 alldfs$start_station_use <- factor(alldfs$start_station_use, ordered = TRUE, levels = c("underutilized", "fair utilization", "adequate utilization", "max utilization")) 
+stationsdf$start_station_use <- factor(stationsdf$start_station_use, ordered = TRUE, levels = c("underutilized", "fair utilization", "adequate utilization", "max utilization")) 
 
 #plan duration
 alldfs$plan_duration <- factor(alldfs$plan_duration, ordered = TRUE, levels = c(1, 30, 180, 365))
@@ -86,7 +96,9 @@ setMarkerCol <- function(x) {
     else if (use == "adequate utilization") {
       "blue"
     }
-    else {"darkblue"}
+    else {
+      "darkblue"
+    }
   })
 }
 
