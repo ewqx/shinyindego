@@ -18,9 +18,10 @@ server <- function(input, output, session) {
   
   output$census_map <- renderLeaflet({ 
     census_map <- leaflet(phlctpolydata) %>%
-      addTiles() %>%
+      addProviderTiles("Stamen.TonerLite") %>%
+      setView(lng = -75.1640, lat = 39.9520, zoom = 11.5) %>%
       addPolygons(stroke = TRUE, weight = 1, color = "#444444", 
-                  smoothFactor = 0.3, fillOpacity = 1, 
+                  smoothFactor = 0.3, fillOpacity = 0.8, 
                   fillColor = ~pal2((B01003_001.POP/ALAND10)*100), 
                   label = ~paste0(NAMELSAD10, ": ", 
                   formatC((B01003_001.POP/ALAND10)*100,"%", big.mark = ","))) %>%

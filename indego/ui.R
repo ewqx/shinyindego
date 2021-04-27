@@ -25,8 +25,8 @@ ui <-  dashboardPage(
   )),
   
   dashboardBody(
+  
     tabItems(
-      
       #tab content
       tabItem(tabName = "introtab",
               fluidRow(
@@ -38,7 +38,7 @@ ui <-  dashboardPage(
               fluidRow(
                 h1("Station Map"),
                 p(),
-                leafletOutput("station_map")
+                leafletOutput("station_map", width="100%",height="1000px")
               )),
       
       #tab content
@@ -66,7 +66,7 @@ ui <-  dashboardPage(
               fluidRow(
                 h1("Census Tract Map"),
                 p(),
-                leafletOutput("census_map")
+                leafletOutput("census_map", width="100%",height="1000px")
               ))
   
 )))
