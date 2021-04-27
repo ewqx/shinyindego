@@ -25,7 +25,25 @@ server <- function(input, output, session) {
     
     if (cddsel == 'pop density'){
       ctfill <- (phlctpolydata$B01003_001.POP/phlctpolydata$ALAND10)*100
-    }
+    } else if (cddsel == 'pop (%black)'){
+      ctfill <- (phlctpolydata$B02001_003.RACE_B/phlctpolydata$B01003_001.POP)*100
+    } else if (cddsel == 'pop (%nonwhite)'){
+      ctfill <- ((phlctpolydata$B01003_001.POP-phlctpolydata$B02001_002.RACE_W)/phlctpolydata$B01003_001.POP)*100
+    } else if (cddsel == 'pop (%white)'){
+      ctfill <- (phlctpolydata$B02001_002.RACE_W/phlctpolydata$B01003_001.POP)*100
+    } else if (cddsel == 'median hh income'){
+      ctfill <- phlctpolydata$B19013_001.INCOME
+    } else if (cddsel == 'workers16+ (%)'){
+      ctfill <- (phlctpolydata$B08016_001.WORKERS16/phlctpolydata$B01003_001.POP)*100
+    } else if (cddsel == 'commute-bike(%)'){
+      ctfill <- (phlctpolydata$B08134_111.CM_BIKE/phlctpolydata$B08016_001.WORKERS16)*100
+    } else if (cddsel == 'commute-walk(%)'){
+      ctfill <- (phlctpolydata$B08134_101.CM_WALK/phlctpolydata$B08016_001.WORKERS16)*100
+    } else if (cddsel == 'commute-publictransit(%)'){
+      ctfill <- (phlctpolydata$B08134_061.CM_PUB/phlctpolydata$B08016_001.WORKERS16)*100
+    } else if (cddsel == 'commute-car(%)'){
+      ctfill <- (phlctpolydata$B08134_011.CM_CAR/phlctpolydata$B08016_001.WORKERS16)*100
+    } 
     else { ctfill <- phlctpolydata$B19013_001.INCOME }
     
     leafletProxy("testmap") %>%
@@ -74,11 +92,6 @@ server <- function(input, output, session) {
   })
   
 
-  
-  
-  
-  
-  
   output$station_map <- renderLeaflet({ 
     stationmap <- leaflet() %>%
       addProviderTiles("Stamen.TonerLite") %>%
