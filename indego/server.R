@@ -7,8 +7,12 @@ server <- function(input, output, session) {
     leaflet() %>%
     addProviderTiles("Stamen.TonerLite") %>%
     setView(lng = -75.1640, lat = 39.9520, zoom = 11.5) %>%
-    addPolygons(data = phlctpolydata, stroke = TRUE, weight = 0.75, color = "#444444", smoothFactor = 0.3) %>%
-    addPolylines(data = phlbikenetwork, stroke = TRUE, weight = 2, color = "cadetblue", fill = FALSE, popup = ~paste0(STREETNAME, '<br>', "Type: ", TYPE))
+    addPolygons(data = phlctpolydata, stroke = TRUE, weight = 0.75, color = "#444444", smoothFactor = 0.3, group="Census Tracts") %>%
+    addPolylines(data = phlbikenetwork, stroke = TRUE, weight = 2, color = "cadetblue", fill = FALSE, group="Bike Lanes", popup = ~paste0(STREETNAME, '<br>', "Type: ", TYPE)) %>%
+      addLayersControl(
+        overlayGroups =c("Census Tracts", "Bike Lanes"),
+        options = layersControlOptions(collapsed=FALSE)
+      )
   })
   
   output$sdropdown <- renderUI({
