@@ -10,9 +10,28 @@ server <- function(input, output, session) {
     addPolygons(data = phlctpolydata, stroke = FALSE, weight = 0.75, color = "#444444", smoothFactor = 0.3, group="Census Tracts") %>%
     addPolylines(data = phlbikenetwork, stroke = TRUE, weight = 2, color = "cadetblue", fill = FALSE, group="Bike Lanes", popup = ~paste0(STREETNAME, '<br>', "Type: ", TYPE)) %>%
       addLayersControl(
-        overlayGroups =c("Census Tracts", "Bike Lanes","SEPTA Train Stations"),
+        overlayGroups =c("Census Tracts", "Bike Lanes","SEPTA Train Stations", "Vehicular Crashes involving bikes"),
         options = layersControlOptions(collapsed = FALSE)
       )
+  })
+  
+  output$censusdropdown <- renderUI({
+    choices <- c(censusVars, "None")
+    selectInput(inputId = "censusdropdown", label = "Census Col", choices = choices, selected = "None")
+  })
+  
+  observeEvent(input$censusdropdown, {
+    cddsel = input$censusdropdown
+    
+    if (cddsel == 'pop density'){
+      ctfill <- (phlctpolydata$B01003_001.POP/phlctpolydata$ALAND10)*100
+    }
+    else { ctfill <- phlctpolydata$B19013_001.INCOME }
+    
+    leafletProxy("testmap") %>%
+      addPolygons(data = phlctpolydata, stroke = TRUE, weight = 1, 
+                  color = "#444444", smoothFactor = 0.3, fillOpacity = 0.8, 
+                  fillColor = ~pal2(ctfill))
   })
   
   output$sdropdown <- renderUI({
@@ -35,11 +54,13 @@ server <- function(input, output, session) {
       clearMarkers() %>%
       addAwesomeMarkers(data=stationsdf2, lng = stationsdf2$start_lon, 
                         lat = stationsdf2$start_lat, 
+                      
                         icon = awesomeIcons(
-                          icon = 'map-marker-alt',
-                          library = 'fa',
-                          markerColor = setMarkerCol(stationsdf2)
-                        ),
+                         # icon = 'map-marker-alt',
+                          icon = "bicycle",
+                          library = "fa",
+                          markerColor = setMarkerCol(stationsdf2)),
+                        
                         popup = paste0(
                           stationsdf2$start_station_name, 
                           "<br>",
@@ -47,8 +68,9 @@ server <- function(input, output, session) {
                           "<br>",
                           "Usage: ", stationsdf2$start_station_use)) %>%
    
-   addCircleMarkers(data = phlbslstations, color = "orange", radius = 5, stroke = FALSE, fillOpacity = 0.5, group="SEPTA Train Stations") %>%
-     addCircleMarkers(data = phlmflstations, color = "blue", radius = 5, stroke = FALSE, fillOpacity = 0.5, group="SEPTA Train Stations") 
+   addCircleMarkers(data = phlbslstations, color = "orange", radius = 3, stroke = FALSE, fillOpacity = 0.8, group="SEPTA Train Stations") %>%
+     addCircleMarkers(data = phlmflstations, color = "blue", radius = 3, stroke = FALSE, fillOpacity = 0.8, group="SEPTA Train Stations") %>%
+     addCircleMarkers(data = phlvehcrashes, radius = 2, stroke = FALSE, color = "brown", fillOpacity = 0.5, group="Vehicular Crashes involving bikes")
   })
   
 
@@ -80,8 +102,8 @@ server <- function(input, output, session) {
                   smoothFactor = 0.3, fillOpacity = 0.8, 
                   fillColor = ~pal2((B01003_001.POP/ALAND10)*100), 
                   label = ~paste0(NAMELSAD10, ": ", 
-                  formatC((B01003_001.POP/ALAND10)*100,"%", big.mark = ","))) %>%
-      addLegend(pal = pal2, title = "pop density (%)", values = ~((B01003_001.POP/ALAND10)*100), opacity = 1.0)
+                  formatC((B01003_001.POP/ALAND10)*100, big.mark = ","))) %>%
+      addLegend(pal = pal2, title = "pop density", values = ~((B01003_001.POP/ALAND10)*100), opacity = 1.0)
     })
   
   

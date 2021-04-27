@@ -83,12 +83,12 @@ stationsdf$start_station_use <- factor(stationsdf$start_station_use, ordered = T
 #plan duration
 alldfs$plan_duration <- factor(alldfs$plan_duration, ordered = TRUE, levels = c(1, 30, 180, 365))
 
-#station map markers by usage
+#set station map marker color by usage
 
 setMarkerCol <- function(x) {
   sapply(x$start_station_use, function(use) {
     if ( use == "underutilized") {
-      'lightgray'
+      'white'
     }
     else if (use == "fair utilization") {
       "lightblue"
@@ -102,14 +102,7 @@ setMarkerCol <- function(x) {
   })
 }
 
-icons <- awesomeIcons(
-  icon = 'map-marker-alt',
-  iconColor = "#FFFFFF",
-  library = 'fa',
-  markerColor = setMarkerCol(stationsdf)
-)
-
-
+#
 
 ## COLORS/ PALETTES
 hrno <- 24
@@ -127,6 +120,19 @@ pal2 <- colorNumeric("BuPu", NULL)
 categoricalVars <- c("trip_route_category", "passholder_type","trip_route_category", "start_year", "quarter", "start_time_hour", "start_month", "start_dow1", "start_dow_cat", "duration_cat2", "start_station_use")
 
 stationVars <- c("trip_route_category", "passholder_type", "start_year", "quarter", "start_time_hour", "start_month", "start_dow1", "start_dow_cat", "duration_cat2", "start_station_use", "bike_type")
+
+#population density = (B01003_001.POP/ALAND10)*100
+#population (% black) = (B02001_003.RACE_B/B01003_001.POP)*100
+#population (% nonwhite) = ((B01003_001.POP-B02001_002.RACE_W)/B01003_001.POP)*100
+#population (% white) = (B02001_002.RACE_W/B01003_001.POP)*100
+#median hh income = B19013_001.INCOME
+#workers (16+) = (B08016_001.WORKERS16/B01003_001.POP)*100
+#commute (bike) = (B08134_111.CM_BIKE/B08016_001.WORKERS16)*100
+#commute (walk) = (B08134_101.CM_WALK/B08016_001.WORKERS16)*100
+#commute (car) = (B08134_011.CM_CAR/B08016_001.WORKERS16)*100
+#commute (public transit) = (B08134_061.CM_PUB/B08016_001.WORKERS16)*100
+
+censusVars <- c("pop density", "pop (%black)", "pop (%nonwhite)", "pop (%white)", "median hh income", "workers16+ (%)", "commute-bike(%)", "commute-walk(%)", "commute-publictransit(%)", "commute-car(%)")
 
 
 
