@@ -6,7 +6,9 @@ server <- function(input, output, session) {
     #basemap
     leaflet() %>%
     addProviderTiles("Stamen.TonerLite") %>%
-    setView(lng = -75.1640, lat = 39.9520, zoom = 12.5)
+    setView(lng = -75.1640, lat = 39.9520, zoom = 11.5) %>%
+    addPolygons(data = phlctpolydata, stroke = TRUE, weight = 0.75, color = "#444444", smoothFactor = 0.3) %>%
+    addPolylines(data = phlbikenetwork, stroke = TRUE, weight = 2, color = "cadetblue", fill = FALSE, popup = ~paste0(STREETNAME, '<br>', "Type: ", TYPE))
   })
   
   output$sdropdown <- renderUI({
@@ -40,7 +42,6 @@ server <- function(input, output, session) {
                           "<br>",
                           "Usage: ", stationsdf2$start_station_use))
   })
-  
   
   output$station_map <- renderLeaflet({ 
     stationmap <- leaflet() %>%

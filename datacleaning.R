@@ -1038,6 +1038,10 @@ leaflet(phlct) %>%
   addTiles() %>%
   addPolygons(stroke = TRUE, weight = 1, color = "#444444", fill = FALSE)
 
+leaflet(phlbikenetwork) %>%
+  addProviderTiles("Stamen.TonerLite") %>%
+  addPolylines(stroke = TRUE, weight = 2, color = "cadetblue", fill = FALSE, popup = ~paste0(STREETNAME, '<br>', "Type: ", TYPE))
+
 
 #station map markers by usage
 

@@ -77,7 +77,7 @@ ui <-  dashboardPage(
               fluidRow(
                 h1("Test Leaflet Proxy Map"),
                 uiOutput("sdropdown"),
-                leafletOutput("testmap", width="100%",height="1000px")
+                leafletOutput("testmap", width="100%",height="750px")
               ))
   
 )))
