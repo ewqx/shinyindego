@@ -21,6 +21,9 @@ ui <-  dashboardPage(
                 icon = icon("th")),
       menuItem("Census data", 
                tabName = "censustab", 
+               icon = icon("map")),
+      menuItem("Test map", 
+               tabName = "testtab", 
                icon = icon("map"))
   )),
   
@@ -67,6 +70,14 @@ ui <-  dashboardPage(
                 h1("Census Tract Map"),
                 p(),
                 leafletOutput("census_map", width="100%",height="1000px")
+              )),
+      
+      #tab content
+      tabItem(tabName = "testtab",
+              fluidRow(
+                h1("Test Leaflet Proxy Map"),
+                uiOutput("sdropdown"),
+                leafletOutput("testmap", width="100%",height="1000px")
               ))
   
 )))

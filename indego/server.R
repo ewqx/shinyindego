@@ -1,11 +1,52 @@
 
 server <- function(input, output, session) {
   
+  
+  output$testmap <- renderLeaflet({ 
+    #basemap
+    leaflet() %>%
+    addProviderTiles("Stamen.TonerLite") %>%
+    setView(lng = -75.1640, lat = 39.9520, zoom = 12.5)
+  })
+  
+  output$sdropdown <- renderUI({
+    choices <- as.character(unique(stationsdf$start_station_use))  
+    choices <- c('All', choices)
+    selectInput(inputId = "sdropdown", label = "Station Usage", choices = choices, selected = "All")
+  })
+  
+  observeEvent(input$sdropdown, {
+    sddsel = input$sdropdown
+    
+    if (sddsel != 'All'){
+      stationsdf2 <- stationsdf[stationsdf$start_station_use == sddsel, ]
+    } else {
+      stationsdf2 <- stationsdf
+    }
+    
+    leafletProxy("testmap") %>%
+      clearMarkers() %>%
+      addAwesomeMarkers(data=stationsdf2, lng = stationsdf2$start_lon, 
+                        lat = stationsdf2$start_lat, 
+                        icon = awesomeIcons(
+                          icon = 'map-marker-alt',
+                          library = 'fa',
+                          markerColor = setMarkerCol(stationsdf2)
+                        ),
+                        popup = paste0(
+                          stationsdf2$start_station_name, 
+                          "<br>",
+                          "Trips: ", stationsdf2$start_station_volume,
+                          "<br>",
+                          "Usage: ", stationsdf2$start_station_use))
+  })
+  
+  
   output$station_map <- renderLeaflet({ 
-    stationvolmap <- leaflet(stationsdf) %>%
+    stationmap <- leaflet() %>%
       addProviderTiles("Stamen.TonerLite") %>%
       setView(lng = -75.1640, lat = 39.9520, zoom = 12.5) %>%
-      addAwesomeMarkers(lng = stationsdf$start_lon, 
+      addAwesomeMarkers(data=stationsdf, lng = stationsdf$start_lon, 
                         lat = stationsdf$start_lat, 
                         icon=icons, 
                         popup = paste0(

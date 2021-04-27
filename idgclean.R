@@ -75,8 +75,8 @@ alldfs$plan_duration <- factor(alldfs$plan_duration, ordered = TRUE, levels = c(
 
 #station map markers by usage
 
-setMarkerCol <- function(stationsdf) {
-  sapply(stationsdf$start_station_use, function(use) {
+setMarkerCol <- function(x) {
+  sapply(x$start_station_use, function(use) {
     if ( use == "underutilized") {
       'lightgray'
     }
