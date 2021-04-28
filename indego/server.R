@@ -104,9 +104,27 @@ server <- function(input, output, session) {
     click <- input$testmap_click
     text <- paste("Latitude ", round(click$lat,2), "Longtitude ", round(click$lng,2))
     
+    print(click)
+    rlat = click$lat
+    rlng = click$lng
+    rcoordsdf <- data.frame(rlat, rlng)
+    projcrs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+    rcoordsobj <- st_as_sf(x = rcoordsdf, coords = c('rlng', 'rlat'), crs = projcrs)
+    print(rcoordsobj)
+    
+    #buffer in arc degrees - approx. 828.79m - around 0.5miles
+    buffer <- sf::st_buffer(rcoordsobj, dist = 0.009722222222222222)
+    print(buffer)
+    
+    sf_phlbusshelters <- st_as_sf(phlbusshelters, coords = c("LONG.", "LAT."), crs = projcrs)
+
     leafletProxy("testmap") %>%
-      clearGroup("new_point") %>%
-      addCircles(click$lng, click$lat, radius=800, color="red", group = "new_point")
+      clearGroup("new_buffer") %>%
+      addCircles(click$lng, click$lat, radius=1000, color="red", group = "new_buffer") 
+     
+    count <- sf::st_join(buffer, sf_phlbusshelters, left = F) %>% 
+      nrow()
+    print(count)
     
   })
   
