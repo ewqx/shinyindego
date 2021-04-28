@@ -75,19 +75,18 @@ ui <-  dashboardPage(
       #tab content
       tabItem(tabName = "testtab",
               fluidRow(
-                h1("_Indego Map"),
-                h5("Click anywhere on the map to create 0.5mi radius circle"),
-                textOutput("console")
-                ),
+                h1("_Indego Map")),
               fluidRow(
-                box(width = 5,
+                box(width = 4,
+                  h4("Click anywhere on the map to find no. of bus stops within 0.5mi radius:"),h2(textOutput("console"))),
+                box(width = 4,
                     uiOutput("sdropdown")),
-                box(width = 5,
+                box(width = 4,
                 uiOutput("censusdropdown")),
-                box(width = 5,
-                sliderInput("oprange", "Opacity", min = 0, max = 1, value = 0, step = 0.25))),
+                box(width = 4,
+                sliderInput("oprange", "Opacity", min = 0, max = 1, value = 0.5, step = 0.25))),
               fluidRow(
-                leafletOutput("testmap", width="100%",height="500px")
+                leafletOutput("testmap", width="100%",height="600px")
               ))
   
 )))

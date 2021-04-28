@@ -10,12 +10,12 @@ server <- function(input, output, session) {
       addLayersControl(
         overlayGroups =c("Census Data", "Subway Stations", "Bus Stops", "Vehicular Crashes (Bikes)", "Bike Lanes"),
         options = layersControlOptions(collapsed = FALSE)
-      ) 
+      )
   })
   
   output$censusdropdown <- renderUI({
-    choices <- c(censusVars)
-    selectInput(inputId = "censusdropdown", label = "Census Col", choices = choices, selected = "pop density")
+    choices <- c(censusVars, "None")
+    selectInput(inputId = "censusdropdown", label = "Census Col", choices = choices, selected = "None")
   })
   
   observeEvent(input$censusdropdown, {
@@ -41,7 +41,7 @@ server <- function(input, output, session) {
       ctfill <- (phlctpolydata$B08134_061.CM_PUB/phlctpolydata$B08016_001.WORKERS16)*100
     } else if (cddsel == 'commute-car(%)'){
       ctfill <- (phlctpolydata$B08134_011.CM_CAR/phlctpolydata$B08016_001.WORKERS16)*100
-    } else { ctfill = NULL  }
+    } else { ctfill = 1 }
     
     leafletProxy("testmap") %>%
       clearShapes() %>%
@@ -95,7 +95,9 @@ server <- function(input, output, session) {
                     label = paste0(phlbslstations$Station, " ", "Minority Area: ", phlbslstations$Minority_Area,  " ", "Low-income Area: ", phlbslstations$Low_Income_Area)) %>%
      addCircleMarkers(data = phlmflstations, color = "blue", radius = 3, stroke = FALSE, fillOpacity = 0.8, group="Subway Stations", label = paste0(phlmflstations$Station, " ", "Minority Area: ", phlmflstations$Minority_Area,  " ", "Low-income Area: ", phlmflstations$Low_Income_Area)) %>%
      addCircleMarkers(data = phlvehcrashes, radius = 6, color = "brown", fillOpacity = 0.1, label = paste0("Count:",  phlvehcrashes$bicycle_death_count + phlvehcrashes$bicycle_maj_inj_count), group="Vehicular Crashes (Bikes)") %>%
-     addCircleMarkers(data = phlbusshelters, lat = phlbusshelters$LAT., lng = phlbusshelters$LONG., color = "green", radius = 2, stroke = FALSE, fillOpacity = 1, group = "Bus Stops", label = paste0(phlbusshelters$ADDRESS))
+     addCircleMarkers(data = phlbusshelters, lat = phlbusshelters$LAT., lng = phlbusshelters$LONG., color = "green", radius = 2, stroke = FALSE, fillOpacity = 1, group = "Bus Stops", label = paste0(phlbusshelters$ADDRESS)) %>%
+     hideGroup("Bus Stops") %>% 
+     hideGroup("Vehicular Crashes (Bikes)") %>% hideGroup("Subway Stations") %>% hideGroup("Bike Lanes")
   })
   
 
@@ -125,10 +127,10 @@ server <- function(input, output, session) {
     #display circle of the clicked point
     leafletProxy("testmap") %>%
       clearGroup("new_buffer") %>%
-      addCircles(click$lng, click$lat, radius=1000, color="red", group = "new_buffer") 
+      addCircles(click$lng, click$lat, radius=1200, stroke = FALSE, color="red", group = "new_buffer") 
     
     #count number of bus shelters within buffer - 0.5mi radius
-    count <- sf::st_join(buffer, sf_phlbusshelters, left = F) %>% 
+    count <- sf::st_join(sf_phlbusshelters, buffer, left = F) %>% 
       nrow()
     print(count)
     
