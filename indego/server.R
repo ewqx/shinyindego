@@ -196,4 +196,22 @@ server <- function(input, output, session) {
     ggplotly(ss)
   })
   
+  ### HEATMAP - plot trips - start/end stations
+  #next steps: heatmap on the left, station map on the right - display start and end stations when user clicks on a point on the heat map
+  output$heatmapplot <- renderPlotly({
+    hmp <- ggplot(data = station_heatmap_df, mapping = aes(x=start_station, y=end_station, fill=volume)) +
+      geom_tile() + 
+      scale_fill_continuous(high = "#008080", low = "#FFFFFF") +
+      labs(
+        title = "Heatmap of Trips Between Stations (filtered)",
+        x = "Origin",
+        y = "Destination",
+        fill = "Trip Volume") +
+      theme(axis.text.x = element_blank(),
+            axis.text.y = element_blank())
+      #theme(text = element_text(size=0), axis.text.x = element_text(angle = 90, hjust = 10)) + 
+      coord_fixed()
+    ggplotly(hmp) %>% layout(height = 800, width = 800)
+  })
+  
 }

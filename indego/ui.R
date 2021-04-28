@@ -16,7 +16,10 @@ ui <-  dashboardPage(
       menuItem("Charts - by stations", 
                 tabName = "stationstab", 
                 icon = icon("th")),
-      menuItem("Indego Map", 
+      menuItem("Heatmap - trips by stations", 
+               tabName = "heatmaptab", 
+               icon = icon("th")),
+      menuItem("Map - Indego Stations", 
                tabName = "testmaptab", 
                icon = icon("map"))
   )),
@@ -59,9 +62,18 @@ ui <-  dashboardPage(
       ))),
       
       #tab content
+      tabItem(tabName = "heatmaptab",
+              fluidRow(
+                h1("_Indego Stations - Trip Heatmap")),
+              fluidRow(
+                plotlyOutput("heatmapplot")
+                )
+              ),
+      
+      #tab content
       tabItem(tabName = "testmaptab",
               fluidRow(
-                h1("_Indego Map")),
+                h1("_Indego Stations - Map")),
               fluidRow(
                 box(width = 4,
                   h4("Click anywhere on the map to find no. of bus stops within 0.5mi radius:"),h2(textOutput("console"))),

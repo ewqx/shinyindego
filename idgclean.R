@@ -115,12 +115,11 @@ randompalette <- distinctColorPalette(n)
 pal <- colorNumeric("viridis", NULL)
 pal2 <- colorNumeric("BuPu", NULL)
 
-
 ## VARIABLES
 
-#categoricalVars <- c("trip_route_category", "passholder_type","trip_route_category", "start_year", "quarter", "start_time_hour", "start_month", "start_dow1", "start_dow_cat", "duration_cat2", "start_station_use")
-
 chartVars <- c("trip_route_category", "passholder_type", "start_year", "quarter", "start_time_hour", "start_month", "start_dow1", "start_dow_cat", "duration_cat2", "start_station_use", "bike_type")
+
+censusVars <- c("pop density", "pop (%black)", "pop (%nonwhite)", "pop (%white)", "median hh income", "workers16+ (%)", "commute-bike(%)", "commute-walk(%)", "commute-publictransit(%)", "commute-car(%)")
 
 #population density = (B01003_001.POP/ALAND10)*100
 #population (% black) = (B02001_003.RACE_B/B01003_001.POP)*100
@@ -133,7 +132,17 @@ chartVars <- c("trip_route_category", "passholder_type", "start_year", "quarter"
 #commute (car) = (B08134_011.CM_CAR/B08016_001.WORKERS16)*100
 #commute (public transit) = (B08134_061.CM_PUB/B08016_001.WORKERS16)*100
 
-censusVars <- c("pop density", "pop (%black)", "pop (%nonwhite)", "pop (%white)", "median hh income", "workers16+ (%)", "commute-bike(%)", "commute-walk(%)", "commute-publictransit(%)", "commute-car(%)")
+## for trip heatmap
+#create table for start/end station
+station_heatmap_tab <- table(alldfs$start_station_name, alldfs$end_station_name)
+#create dataframe
+station_heatmap_df <- data.frame(station_heatmap_tab[1:154, 1:153])
+#rename columns
+names(station_heatmap_df) <- c("start_station", "end_station", "volume")
+#filter out the outlier (PMA-PMA route) that screws up entire heatmap #117891 trips - ready to plot
+station_heatmap_df <- filter(station_heatmap_df, volume != "117891")
+
+
 
 
 

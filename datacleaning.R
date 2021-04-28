@@ -864,30 +864,34 @@ heatmap2018
 
 
 #alldfs station heatmap
-station_heatmap_tab <- table(alldfs$start_station, alldfs$end_station)
+#create table for start/end station
+station_heatmap_tab <- table(alldfs$start_station_name, alldfs$end_station_name)
 dim(station_heatmap_tab)
 head(station_heatmap_tab)
 
+#create dataframe
 station_heatmap_df <- data.frame(station_heatmap_tab[1:154, 1:153])
+#rename columns
 names(station_heatmap_df) <- c("start_station", "end_station", "volume")
 head(station_heatmap_df)
 tail(station_heatmap_df)
-max(station_heatmap_df$volume) #120114
+max(station_heatmap_df$volume) #117891
 min(station_heatmap_df$volume) #0
 
-station_heatmap_df <- filter(station_heatmap_df, volume != "120114")
+#filter out the outlier
+station_heatmap_df <- filter(station_heatmap_df, volume != "117891")
 
 gheatmap_base <- 
   ggplot(data = station_heatmap_df, mapping = aes(x=start_station, y=end_station, fill=volume)) +
   geom_tile() + 
-  scale_fill_continuous(high = "#132B43", low = "#56B1F7") +
-  #scale_color_viridis(option = "D") +
+  scale_fill_continuous(high = "#008080", low = "#FFFFFF") +
+  #scale_color_viridis(option = "A") +
   labs(
     title = "Heatmap of Trips Between Stations",
     x = "Starting Station",
     y = "Ending Station",
     fill = "Trip Volume") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 10)) + 
+  theme(text = element_text(size=5), axis.text.x = element_text(angle = 90, hjust = 10)) + 
   coord_fixed()
 
 gheatmap_base
