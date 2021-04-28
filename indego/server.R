@@ -104,32 +104,41 @@ server <- function(input, output, session) {
     click <- input$testmap_click
     text <- paste("Latitude ", round(click$lat,2), "Longtitude ", round(click$lng,2))
     
-    print(click)
+    #print(click)
     rlat = click$lat
     rlng = click$lng
+    #create dataframe of coordinates clicked
     rcoordsdf <- data.frame(rlat, rlng)
+    #define projection
     projcrs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+    #create sf object of coordinates
     rcoordsobj <- st_as_sf(x = rcoordsdf, coords = c('rlng', 'rlat'), crs = projcrs)
-    print(rcoordsobj)
+    #print(rcoordsobj)
     
-    #buffer in arc degrees - approx. 828.79m - around 0.5miles
+    #create buffer based on point clicked by user - buffer radius in arc degrees - approx. 828.79m - around 0.5miles
     buffer <- sf::st_buffer(rcoordsobj, dist = 0.009722222222222222)
-    print(buffer)
+    #print(buffer)
     
+    #convert csv to sf for st_join to work
     sf_phlbusshelters <- st_as_sf(phlbusshelters, coords = c("LONG.", "LAT."), crs = projcrs)
 
+    #display circle of the clicked point
     leafletProxy("testmap") %>%
       clearGroup("new_buffer") %>%
       addCircles(click$lng, click$lat, radius=1000, color="red", group = "new_buffer") 
-     
+    
+    #count number of bus shelters within buffer - 0.5mi radius
     count <- sf::st_join(buffer, sf_phlbusshelters, left = F) %>% 
       nrow()
     print(count)
     
+    #print count to ui
+    withCallingHandlers(
+      output$console <- renderPrint(cat(count))
+    )
+   
   })
   
-  
-
   output$station_map <- renderLeaflet({ 
     stationmap <- leaflet() %>%
       addProviderTiles("Stamen.TonerLite") %>%

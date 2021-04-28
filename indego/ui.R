@@ -75,7 +75,10 @@ ui <-  dashboardPage(
       #tab content
       tabItem(tabName = "testtab",
               fluidRow(
-                h1("_Indego Map")),
+                h1("_Indego Map"),
+                h5("Click anywhere on the map to create 0.5mi radius circle"),
+                textOutput("console")
+                ),
               fluidRow(
                 box(width = 5,
                     uiOutput("sdropdown")),
