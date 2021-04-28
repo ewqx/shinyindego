@@ -1,26 +1,33 @@
 
 server <- function(input, output, session) {
   
-  
+  #### INDEGO MAP OUTPUT ###
   output$testmap <- renderLeaflet({ 
-    #basemap
+    
+    #load leaflet basemap
     leaflet() %>%
+      #use greyscale Stamen tiles
     addProviderTiles("Stamen.TonerLite") %>%
+      #set view to Philadelphia CC coords
     setView(lng = -75.1640, lat = 39.9520, zoom = 11.5) %>%
+      #add radio buttons to toggle layers on and off
       addLayersControl(
         overlayGroups =c("Census Data", "Subway Stations", "Bus Stops", "Vehicular Crashes (Bikes)", "Bike Lanes"),
         options = layersControlOptions(collapsed = FALSE)
       )
   })
   
+  ## add dropdown for options - census data columns
   output$censusdropdown <- renderUI({
     choices <- c(censusVars, "None")
-    selectInput(inputId = "censusdropdown", label = "Census Col", choices = choices, selected = "None")
+    selectInput(inputId = "censusdropdown", label = "Census Column", choices = choices, selected = "None")
   })
   
+  #get dropdown selection for census tract chloropleth map
   observeEvent(input$censusdropdown, {
     cddsel = input$censusdropdown
     
+    #based on dropdown selection, grab census column(s) 
     if (cddsel == 'pop density'){
       ctfill <- (phlctpolydata$B01003_001.POP/phlctpolydata$ALAND10)*100
     } else if (cddsel == 'pop (%black)'){
@@ -43,61 +50,74 @@ server <- function(input, output, session) {
       ctfill <- (phlctpolydata$B08134_011.CM_CAR/phlctpolydata$B08016_001.WORKERS16)*100
     } else { ctfill = 1 }
     
+    #add layer to map
     leafletProxy("testmap") %>%
+      #clear polygon and legend each time user makes selection
       clearShapes() %>%
       clearControls() %>%
-      addPolygons(data = phlctpolydata, stroke = TRUE, weight = 0.5, 
-                  color = "white", smoothFactor = 0.3, fillOpacity = input$oprange, 
-                  fillColor = ~pal2(ctfill),
-                  label = ~paste0(NAMELSAD10, ": ", 
-                                  formatC((ctfill), big.mark = ",")), group = "Census Data") %>%
+      #let user control fillOpacity of layer using slider input - input$oprange, fillColor controlled by user selection of census data dropdown (ctfill - see if statement above)
+      addPolygons(data = phlctpolydata, stroke = TRUE, weight = 0.5, color = "white", smoothFactor = 0.3, fillOpacity = input$oprange, fillColor = ~pal2(ctfill), label = ~paste0(NAMELSAD10, ": ", formatC((ctfill), big.mark = ",")), group = "Census Data") %>%
+      #legend title to match dropdown selection, values to match what is being mapped (ctfill)
       addLegend(pal = pal2, title = cddsel, values = ctfill, opacity = 1) %>%
+      #because of clearShapes() - addPolylines() under here
       addPolylines(data = phlbikenetwork, color = "cadetblue", group = "Bike Lanes", weight = 2)
   })
   
+  #create dropdown for indego bike stations utilization categories
   output$sdropdown <- renderUI({
-    choices <- as.character(unique(sort(stationsdf$start_station_use)))  
+    #grab unique values from the utilization column - sort by levels
+    choices <- as.character(unique(sort(stationsdf$start_station_use))) 
+    #Add 'All" and 'Clear' to choices - to display all stations and none
     choices <- c('All', choices, 'Clear')
+    #default to no markers displayed on load
     selectInput(inputId = "sdropdown", label = "Station Usage", choices = choices, selected = "Clear")
   })
   
+  #grab the dropdown selection
   observeEvent(input$sdropdown, {
     sddsel = input$sdropdown
     
     if (sddsel == 'All'){
+      #display all stations
       stationsdf2 <- stationsdf
     } 
     else {
+      #display markers with values that match dropdown selection
       stationsdf2 <- stationsdf[stationsdf$start_station_use == sddsel, ]
     }
-    
+  
+  #map out based on user selection    
    leafletProxy("testmap") %>%
+     #remove markers each time user makes a different selection
       clearMarkers() %>%
-      addAwesomeMarkers(data=stationsdf2, lng = stationsdf2$start_lon, 
-                        lat = stationsdf2$start_lat, 
-                      
+     #add markers - use font awesome icons
+      addAwesomeMarkers(data=stationsdf2, lng = stationsdf2$start_lon, lat = stationsdf2$start_lat, 
                         icon = awesomeIcons(
                          # icon = 'map-marker-alt',
                           icon = "bicycle",
                           library = "fa",
-                          markerColor = setMarkerCol(stationsdf2)),
-                        
-                        label = paste0(
+                          #set markerColor function - color set based on utilization value/ dropdown selection
+                          markerColor = setMarkerCol(stationsdf2)),           
+                          label = paste0(
                           stationsdf2$start_station_name, 
+                          " ",
+                          "(",stationsdf2$start_station,")",
                           " ",
                           "Trips: ", stationsdf2$start_station_volume,
                           " ",
                           "Usage: ", stationsdf2$start_station_use)) %>%
    
-   addCircleMarkers(data = phlbslstations, color = "orange", radius = 3,
-                    stroke = FALSE, fillOpacity = 0.8, 
-                    group="Subway Stations", 
-                    label = paste0(phlbslstations$Station, " ", "Minority Area: ", phlbslstations$Minority_Area,  " ", "Low-income Area: ", phlbslstations$Low_Income_Area)) %>%
+     #because of clearMarkers() above, add markers of various other layers/ datasets under here
+     #define groups to enable toggling on/off layers
+   addCircleMarkers(data = phlbslstations, color = "orange", radius = 3, stroke = FALSE, fillOpacity = 0.8, group="Subway Stations", label = paste0(phlbslstations$Station, " ", "Minority Area: ", phlbslstations$Minority_Area,  " ", "Low-income Area: ", phlbslstations$Low_Income_Area)) %>%
      addCircleMarkers(data = phlmflstations, color = "blue", radius = 3, stroke = FALSE, fillOpacity = 0.8, group="Subway Stations", label = paste0(phlmflstations$Station, " ", "Minority Area: ", phlmflstations$Minority_Area,  " ", "Low-income Area: ", phlmflstations$Low_Income_Area)) %>%
      addCircleMarkers(data = phlvehcrashes, radius = 6, color = "brown", fillOpacity = 0.1, label = paste0("Count:",  phlvehcrashes$bicycle_death_count + phlvehcrashes$bicycle_maj_inj_count), group="Vehicular Crashes (Bikes)") %>%
      addCircleMarkers(data = phlbusshelters, lat = phlbusshelters$LAT., lng = phlbusshelters$LONG., color = "green", radius = 2, stroke = FALSE, fillOpacity = 1, group = "Bus Stops", label = paste0(phlbusshelters$ADDRESS)) %>%
+     #toggle layers off on load using hideGroup()
      hideGroup("Bus Stops") %>% 
-     hideGroup("Vehicular Crashes (Bikes)") %>% hideGroup("Subway Stations") %>% hideGroup("Bike Lanes")
+     hideGroup("Vehicular Crashes (Bikes)") %>% 
+     hideGroup("Subway Stations") %>% 
+     hideGroup("Bike Lanes")
   })
   
 
@@ -130,58 +150,35 @@ server <- function(input, output, session) {
       addCircles(click$lng, click$lat, radius=1200, stroke = FALSE, color="red", group = "new_buffer") 
     
     #count number of bus shelters within buffer - 0.5mi radius
-    count <- sf::st_join(sf_phlbusshelters, buffer, left = F) %>% 
+    count <- sf::st_join(sf_phlbusshelters, buffer, left = F) %>%
       nrow()
     print(count)
     
     #print count to ui
     withCallingHandlers(
+      #use cat() to remove [1] before printing out on ui
       output$console <- renderPrint(cat(count))
     )
    
   })
   
-  output$station_map <- renderLeaflet({ 
-    stationmap <- leaflet() %>%
-      addProviderTiles("Stamen.TonerLite") %>%
-      setView(lng = -75.1640, lat = 39.9520, zoom = 12.5) %>%
-      addAwesomeMarkers(data=stationsdf, lng = stationsdf$start_lon, 
-                        lat = stationsdf$start_lat, 
-                        icon=icons, 
-                        popup = paste0(
-                          stationsdf$start_station_name, 
-                          "<br>",
-                          "Trips: ", stationsdf$start_station_volume,
-                          "<br>",
-                          "Usage: ", stationsdf$start_station_use))
-  })
-  
-  output$census_map <- renderLeaflet({ 
-    census_map <- leaflet(phlctpolydata) %>%
-      addProviderTiles("Stamen.TonerLite") %>%
-      setView(lng = -75.1640, lat = 39.9520, zoom = 11.5) %>%
-      addPolygons(stroke = TRUE, weight = 1, color = "#444444", 
-                  smoothFactor = 0.3, fillOpacity = 0.8, 
-                  fillColor = ~pal2((B01003_001.POP/ALAND10)*100), 
-                  label = ~paste0(NAMELSAD10, ": ", 
-                  formatC((B01003_001.POP/ALAND10)*100, big.mark = ","))) %>%
-      addLegend(pal = pal2, title = "pop density", values = ~((B01003_001.POP/ALAND10)*100), opacity = 1.0)
-    })
-  
-  
-  output$trip_dow_pass <- renderPlotly({
-    p <- ggplot(alldfs) + 
+
+  ### CHART - x = quarter, y = user input
+  output$quarter_plot <- renderPlotly({
+    qp <- ggplot(alldfs) + 
       aes_string(x = "quarter") + 
-      stat_count(aes_string(fill = input$color_select)) +
+      #fill based on dropdown selection of column/variable to plot against quarter
+      stat_count(aes_string(fill = input$var1_select)) +
       scale_color_viridis(discrete = TRUE, option = "D")+
       scale_fill_viridis(discrete = TRUE)
-    ggplotly(p)
+    ggplotly(qp)
   })
   
+  ### CHART - x = stations, y = user input
   output$station_plot <- renderPlotly({
     ss <- ggplot(alldfs) + 
       aes_string(x = "start_station") + 
-      stat_count(aes_string(fill = input$var_select)) +
+      stat_count(aes_string(fill = input$var2_select)) +
       #scale_fill_brewer(palette = "BuPu",s direction=-1) +
       #scale_color_brewer(palette = "BuPu", direction=-1) +
       scale_color_viridis(discrete = TRUE, option = "D") +

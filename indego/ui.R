@@ -10,20 +10,14 @@ ui <-  dashboardPage(
       menuItem("Introduction", 
                tabName = "introtab", 
                icon = icon("info")),
-      menuItem("Station map", 
-               tabName = "maptab", 
-               icon = icon("map")),
       menuItem("Charts - by quarter", 
                tabName = "quartertab", 
                icon = icon("dashboard")),
       menuItem("Charts - by stations", 
                 tabName = "stationstab", 
                 icon = icon("th")),
-      menuItem("Census data", 
-               tabName = "censustab", 
-               icon = icon("map")),
-      menuItem("Test map", 
-               tabName = "testtab", 
+      menuItem("Indego Map", 
+               tabName = "testmaptab", 
                icon = icon("map"))
   )),
   
@@ -47,11 +41,11 @@ ui <-  dashboardPage(
       #tab content
       tabItem(tabName = "quartertab",
         fluidRow(
-          plotlyOutput("trip_dow_pass"),
+          plotlyOutput("quarter_plot"),
           selectInput(
-            inputId = "color_select",
+            inputId = "var1_select",
             label = "Select Variable",
-            choices = stationVars
+            choices = chartVars
       ))),
   
       #tab content
@@ -59,21 +53,13 @@ ui <-  dashboardPage(
         fluidRow(
           plotlyOutput("station_plot"),
           selectInput(
-            inputId = "var_select",
+            inputId = "var2_select",
             label = "Select Variable",
-            choices = stationVars
+            choices = chartVars
       ))),
       
       #tab content
-      tabItem(tabName = "censustab",
-              fluidRow(
-                h1("Census Tract Map"),
-                p(),
-                leafletOutput("census_map", width="100%",height="1000px")
-              )),
-      
-      #tab content
-      tabItem(tabName = "testtab",
+      tabItem(tabName = "testmaptab",
               fluidRow(
                 h1("_Indego Map")),
               fluidRow(

@@ -118,9 +118,9 @@ pal2 <- colorNumeric("BuPu", NULL)
 
 ## VARIABLES
 
-categoricalVars <- c("trip_route_category", "passholder_type","trip_route_category", "start_year", "quarter", "start_time_hour", "start_month", "start_dow1", "start_dow_cat", "duration_cat2", "start_station_use")
+#categoricalVars <- c("trip_route_category", "passholder_type","trip_route_category", "start_year", "quarter", "start_time_hour", "start_month", "start_dow1", "start_dow_cat", "duration_cat2", "start_station_use")
 
-stationVars <- c("trip_route_category", "passholder_type", "start_year", "quarter", "start_time_hour", "start_month", "start_dow1", "start_dow_cat", "duration_cat2", "start_station_use", "bike_type")
+chartVars <- c("trip_route_category", "passholder_type", "start_year", "quarter", "start_time_hour", "start_month", "start_dow1", "start_dow_cat", "duration_cat2", "start_station_use", "bike_type")
 
 #population density = (B01003_001.POP/ALAND10)*100
 #population (% black) = (B02001_003.RACE_B/B01003_001.POP)*100
