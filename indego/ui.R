@@ -9,11 +9,11 @@ ui <-  dashboardPage(
     sidebarMenu(
       menuItem("Introduction", 
                tabName = "introtab", 
-               icon = icon("info")),
-      menuItem("Charts - by quarter", 
-               tabName = "quartertab", 
+               icon = icon("th")),
+      menuItem("Charts - trips by period", 
+               tabName = "periodtab", 
                icon = icon("dashboard")),
-      menuItem("Charts - by stations", 
+      menuItem("Charts - trips by stations", 
                 tabName = "stationstab", 
                 icon = icon("th")),
       menuItem("Heatmap - trips by stations", 
@@ -27,39 +27,39 @@ ui <-  dashboardPage(
   dashboardBody(
   
     tabItems(
+      
       #tab content
       tabItem(tabName = "introtab",
-              fluidRow(
-                h1("Introduction")
-              )),
+                h1("intro")),
       
       #tab content
-      tabItem(tabName = "maptab",
+      tabItem(tabName = "periodtab",
               fluidRow(
-                h1("Station Map"),
-                p(),
-                leafletOutput("station_map", width="100%",height="1000px")
-              )),
-      
-      #tab content
-      tabItem(tabName = "quartertab",
-        fluidRow(
-          plotlyOutput("quarter_plot"),
-          selectInput(
-            inputId = "var1_select",
-            label = "Select Variable",
-            choices = chartVars
-      ))),
+                h1("Charts - trips by period"),
+                br(),
+                selectInput(
+                  inputId = "var1_select",
+                  label = "Select Variable",
+                  choices = chartVars)),  
+              fluidRow(
+                box(plotlyOutput("quarter_plot")),
+                box(plotlyOutput("month_plot"))),
+              fluidRow(
+                box(plotlyOutput("dow_plot")),
+                box(plotlyOutput("hour_plot")))
+      ),
   
       #tab content
       tabItem(tabName = "stationstab",
-        fluidRow(
-          plotlyOutput("station_plot"),
-          selectInput(
-            inputId = "var2_select",
-            label = "Select Variable",
-            choices = chartVars
-      ))),
+              fluidRow(
+                h1("Charts - trips by stations")),
+              fluidRow(
+                plotlyOutput("station_plot"),
+                selectInput(
+                inputId = "var2_select",
+                label = "Select Variable",
+                choices = chartVars))
+              ),
       
       #tab content
       tabItem(tabName = "heatmaptab",
@@ -86,5 +86,4 @@ ui <-  dashboardPage(
               fluidRow(
                 leafletOutput("testmap", width="100%",height="600px")
               ))
-  
-)))
+  )))

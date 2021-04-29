@@ -174,10 +174,42 @@ server <- function(input, output, session) {
     ggplotly(qp)
   })
   
+  output$month_plot <- renderPlotly({
+    mp <- ggplot(alldfs) + 
+      aes_string(x = "start_month") + 
+      #fill based on dropdown selection of column/variable to plot against quarter
+      stat_count(aes_string(fill = input$var1_select)) +
+      scale_color_viridis(discrete = TRUE, option = "D")+
+      scale_fill_viridis(discrete = TRUE)
+    ggplotly(mp)
+  })
+  
+  output$dow_plot <- renderPlotly({
+    dp <- ggplot(alldfs) + 
+      aes_string(x = "start_dow1") + 
+      #fill based on dropdown selection of column/variable to plot against quarter
+      stat_count(aes_string(fill = input$var1_select)) +
+      scale_color_viridis(discrete = TRUE, option = "D")+
+      scale_fill_viridis(discrete = TRUE)
+    ggplotly(dp)
+  })
+  
+  output$hour_plot <- renderPlotly({
+    hp <- ggplot(alldfs) + 
+      aes_string(x = "start_time_hour") + 
+      #fill based on dropdown selection of column/variable to plot against quarter
+      stat_count(aes_string(fill = input$var1_select)) +
+      scale_color_viridis(discrete = TRUE, option = "D")+
+      scale_fill_viridis(discrete = TRUE) +
+      theme(axis.text.x = element_text(angle = 90, hjust = 10))
+    ggplotly(hp)
+  })
+  
+  
   ### CHART - x = stations, y = user input
   output$station_plot <- renderPlotly({
     ss <- ggplot(alldfs) + 
-      aes_string(x = "start_station") + 
+      aes_string(x = "start_station_name") + 
       stat_count(aes_string(fill = input$var2_select)) +
       #scale_fill_brewer(palette = "BuPu",s direction=-1) +
       #scale_color_brewer(palette = "BuPu", direction=-1) +
