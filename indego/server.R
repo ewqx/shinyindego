@@ -12,7 +12,7 @@ server <- function(input, output, session) {
     setView(lng = -75.1640, lat = 39.9520, zoom = 11.5) %>%
       #add radio buttons to toggle layers on and off
       addLayersControl(
-        overlayGroups =c("Census Data", "Subway Stations", "Bus Stops", "Vehicular Crashes (Bikes)", "Bike Lanes"),
+        overlayGroups =c("Census Data", "Subway Stations", "Bus Stops", "Vehicular Crashes (Bikes)", "Bike Lanes", "Top 10 trips"),
         options = layersControlOptions(collapsed = FALSE)
       )
   })
@@ -51,7 +51,7 @@ server <- function(input, output, session) {
     } else { ctfill = 1 }
     
     #add layer to map
-    leafletProxy("testmap") %>%
+    m <- leafletProxy("testmap") %>%
       #clear polygon and legend each time user makes selection
       clearShapes() %>%
       clearControls() %>%
@@ -60,7 +60,11 @@ server <- function(input, output, session) {
       #legend title to match dropdown selection, values to match what is being mapped (ctfill)
       addLegend(pal = pal2, title = cddsel, values = ctfill, opacity = 1) %>%
       #because of clearShapes() - addPolylines() under here
-      addPolylines(data = phlbikenetwork, color = "cadetblue", group = "Bike Lanes", weight = 2)
+      addPolylines(data = phlbikenetwork, color = "cadetblue", group = "Bike Lanes", weight = 2) 
+    
+    for (i in 1: nrow(top10trips_plot)) {
+      m <- m%>%addPolylines(data=top10trips_plot, lat=c(top10trips_plot$start_lat[i],top10trips_plot$end_lat[i]),lng=c(top10trips_plot$start_lon[i],top10trips_plot$end_lon[i]), color = "lightpink", weight = 3, group = "Top 10 trips", label = paste0("FROM ", top10trips_plot$start_station_name[i], " TO ", top10trips_plot$end_station_name[i]))
+    }
   })
   
   #create dropdown for indego bike stations utilization categories
@@ -112,12 +116,15 @@ server <- function(input, output, session) {
    addCircleMarkers(data = phlbslstations, color = "orange", radius = 3, stroke = FALSE, fillOpacity = 0.8, group="Subway Stations", label = paste0(phlbslstations$Station, " ", "Minority Area: ", phlbslstations$Minority_Area,  " ", "Low-income Area: ", phlbslstations$Low_Income_Area)) %>%
      addCircleMarkers(data = phlmflstations, color = "blue", radius = 3, stroke = FALSE, fillOpacity = 0.8, group="Subway Stations", label = paste0(phlmflstations$Station, " ", "Minority Area: ", phlmflstations$Minority_Area,  " ", "Low-income Area: ", phlmflstations$Low_Income_Area)) %>%
      addCircleMarkers(data = phlvehcrashes, radius = 6, color = "brown", fillOpacity = 0.1, label = paste0("Count:",  phlvehcrashes$bicycle_death_count + phlvehcrashes$bicycle_maj_inj_count), group="Vehicular Crashes (Bikes)") %>%
-     addCircleMarkers(data = phlbusshelters, lat = phlbusshelters$LAT., lng = phlbusshelters$LONG., color = "green", radius = 2, stroke = FALSE, fillOpacity = 1, group = "Bus Stops", label = paste0(phlbusshelters$ADDRESS)) %>%
+     addCircleMarkers(data = phlbusshelters, lat = phlbusshelters$LAT., lng = phlbusshelters$LONG., color = "purple", radius = 2, stroke = FALSE, fillOpacity = 1, group = "Bus Stops", label = paste0(phlbusshelters$ADDRESS)) %>%
+     addCircleMarkers(lng = top10trips_plot$start_lon, lat = top10trips_plot$start_lat, color = "cadetblue", label = top10trips_plot$start_station_name, group = "Top 10 trips") %>%
+     addCircleMarkers(lng = top10trips_plot$end_lon, lat = top10trips_plot$end_lat, color = "cadetblue", label = top10trips_plot$end_station_name, group = "Top 10 trips") %>%
      #toggle layers off on load using hideGroup()
      hideGroup("Bus Stops") %>% 
      hideGroup("Vehicular Crashes (Bikes)") %>% 
      hideGroup("Subway Stations") %>% 
-     hideGroup("Bike Lanes")
+     hideGroup("Bike Lanes") %>% 
+     hideGroup("Top 10 trips") 
   })
   
 

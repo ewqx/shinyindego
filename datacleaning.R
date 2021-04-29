@@ -1154,7 +1154,6 @@ phlvehcrashes <- fromJSON(response) %>% data.frame()
 
 
 ### PLOT TOP 10 TRIPS 
-
 #top 10 trips
 stationhm <- table(alldfs$start_station_name, alldfs$end_station_name)
 stationhmdf <- data.frame(stationhm[1:154, 1:153])
@@ -1162,10 +1161,13 @@ names(stationhmdf) <- c("start_station_name", "end_station_name", "volume")
 stationhmdf <- na.omit(stationhmdf)
 top10trips <- stationhmdf %>%
   arrange(desc(volume)) %>%
-  slice(1:10)
+  slice(1:11)
+
 
 top10trips_plot <- top10trips %>% 
   left_join(select(stationsdf, start_lon, start_lat, start_station_name), by = c("start_station_name" = "start_station_name"))
+
+top10trips_plot <- na.omit(top10trips_plot)
 
 #grab end_station coordinates
 estationsdf <- alldfs %>% select(end_station, end_station_name, end_lat, end_lon)
@@ -1178,14 +1180,18 @@ nrow(estationsdf) #153
 top10trips_plot <- top10trips_plot %>% 
   left_join(select(estationsdf, end_lon, end_lat, end_station_name), by = c("end_station_name" = "end_station_name"))
 
+top10trips_plot
+
+write.csv(top10trips_plot, 'miscdata/top10trips_plot.csv')
+
 ### PLOT TOP 10 ROUTES
 m<-leaflet(data=top10trips_plot)%>%
   addProviderTiles("Stamen.TonerLite") %>%
-  addCircleMarkers(lng = top10trips_plot$start_lon, lat = top10trips_plot$start_lat, color = "cadetblue", label = top10trips_plot$start_station_name) %>%
-  addCircleMarkers(lng = top10trips_plot$end_lon, lat = top10trips_plot$end_lat, color = "cadetblue", label = top10trips_plot$end_station_name)
+  addCircleMarkers(lng = top10trips_plot$start_lon, lat = top10trips_plot$start_lat, color = "cadetblue", label = top10trips_plot$start_station_name, group = "Top 10 trips") %>%
+  addCircleMarkers(lng = top10trips_plot$end_lon, lat = top10trips_plot$end_lat, color = "cadetblue", label = top10trips_plot$end_station_name, group = "Top 10 trips")
 
 for (i in 1: nrow(top10trips_plot)) {
-  m <- m%>%addPolylines(data=top10trips_plot, lat=c(top10trips_plot$start_lat,top10trips_plot$end_lat),lng=c(top10trips_plot$start_lon,top10trips_plot$end_lon), color = "lightpink", weight = 1)
+  m <- m%>%addPolylines(data=top10trips_plot, lat=c(top10trips_plot$start_lat,top10trips_plot$end_lat),lng=c(top10trips_plot$start_lon,top10trips_plot$end_lon), color = "lightpink", weight = 2, group = "Top 10 trips")
 }
 
 
