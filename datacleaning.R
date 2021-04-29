@@ -1194,6 +1194,10 @@ for (i in 1: nrow(top10trips_plot)) {
   m <- m%>%addPolylines(data=top10trips_plot, lat=c(top10trips_plot$start_lat,top10trips_plot$end_lat),lng=c(top10trips_plot$start_lon,top10trips_plot$end_lon), color = "lightpink", weight = 2, group = "Top 10 trips")
 }
 
+# line plot - duration
+ggplot(alldfs, aes(x=duration)) + 
+  stat_count(geom='line', aes(y=..count..)) + 
+  geom_vline(xintercept = 30, color = "cadetblue", size=0.75) 
 
 
 #GET CENSUS TRACT OF STATIONS

@@ -42,6 +42,7 @@ phlmflstations <- geojson_sf("https://opendata.arcgis.com/datasets/8c6e2575c8ad4
 phlvehcrashes <- geojson_sf("https://phl.carto.com/api/v2/sql?q=SELECT+*+FROM+crash_data_collision_crash_2007_2017&filename=crash_data_collision_crash_2007_2017&format=geojson&skipfields=cartodb_id")
 phlvehcrashes <- select(phlvehcrashes, "dec_lat", "dec_long", "bicycle_death_count", "bicycle_maj_inj_count", "vehicle_count", "person_count", "injury_count", "fatal_count", "crash_year", "crash_month", "day_of_week", "hour_of_day")
 phlvehcrashes <- filter(phlvehcrashes, bicycle_death_count > 0 | bicycle_maj_inj_count > 0)
+station_heatmap_df <- read.csv(file = 'miscdata/station_heatmap_df.csv')
 
 
 ## FACTORIZE
@@ -143,6 +144,7 @@ names(station_heatmap_df) <- c("start_station", "end_station", "volume")
 
 #filter out the outlier (PMA-PMA route) that screws up entire heatmap #117891 trips - ready to plot
 station_heatmap_df <- filter(station_heatmap_df, volume != "117891")
+#write.csv(station_heatmap_df, 'miscdata/station_heatmap_df.csv')
 
 
 

@@ -8,6 +8,9 @@ ui <-  dashboardPage(
       menuItem("Introduction", 
                tabName = "introtab", 
                icon = icon("th")),
+      menuItem("Summary", 
+               tabName = "summtab", 
+               icon = icon("th")),
       menuItem("Charts - trips by period", 
                tabName = "periodtab", 
                icon = icon("dashboard")),
@@ -29,6 +32,10 @@ ui <-  dashboardPage(
       #tab content
       tabItem(tabName = "introtab",
                 h1("intro")),
+      
+      #tab content
+      tabItem(tabName = "summtab",
+                box(width = 16, title = "duration (minutes)", plotlyOutput("dur_plot"))),
       
       #tab content
       tabItem(tabName = "periodtab",
@@ -64,9 +71,9 @@ ui <-  dashboardPage(
               fluidRow(
                 h1("_Indego Stations - Trip Heatmap"),
                 br(),
-                box(width = 12, tableOutput("toptentripstat"))),
+                box(width = 16, tableOutput("toptentripstat"))),
               fluidRow(
-                width=16, plotlyOutput("heatmapplot")
+                width = 16, plotlyOutput("heatmapplot")
                 )
               ),
       

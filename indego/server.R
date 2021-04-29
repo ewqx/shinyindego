@@ -1,6 +1,16 @@
 
 server <- function(input, output, session) {
   
+  ### DURATION LINE GRAPH
+  output$dur_plot <- renderPlotly({
+    dp <- ggplot(alldfs, aes(x=duration)) + 
+    stat_count(geom='line', aes(y=..count..)) + 
+    geom_vline(xintercept = 30, color = "cadetblue", size=0.75) 
+    
+    ggplotly(dp) %>% layout(width = 1000)
+  })
+  
+  
   #### INDEGO MAP OUTPUT ###
   output$testmap <- renderLeaflet({ 
     
@@ -63,7 +73,7 @@ server <- function(input, output, session) {
       addPolylines(data = phlbikenetwork, color = "cadetblue", group = "Bike Lanes", weight = 2) 
     
     for (i in 1: nrow(top10trips_plot)) {
-      m <- m%>%addPolylines(data=top10trips_plot, lat=c(top10trips_plot$start_lat[i],top10trips_plot$end_lat[i]),lng=c(top10trips_plot$start_lon[i],top10trips_plot$end_lon[i]), color = "lightpink", weight = 3, group = "Top 10 trips", label = paste0("FROM ", top10trips_plot$start_station_name[i], " TO ", top10trips_plot$end_station_name[i]))
+      m <- m%>%addPolylines(data=top10trips_plot, lat=c(top10trips_plot$start_lat[i],top10trips_plot$end_lat[i]),lng=c(top10trips_plot$start_lon[i],top10trips_plot$end_lon[i]), color = "lightpink", weight = 3, opacity = 3, group = "Top 10 trips", label = paste0("FROM ", top10trips_plot$start_station_name[i], " TO ", top10trips_plot$end_station_name[i]))
     }
   })
   
@@ -171,7 +181,6 @@ server <- function(input, output, session) {
    
   })
   
-
   ### CHART - x = quarter, y = user input
   output$quarter_plot <- renderPlotly({
     qp <- ggplot(alldfs) + 
@@ -256,6 +265,6 @@ server <- function(input, output, session) {
   })
   
   # Table of top ten trips - start/ end stations 
-  output$toptentripstat <- renderTable(top10trips)
+  output$toptentripstat <- renderTable(top10trips[2:4])
   
 }
