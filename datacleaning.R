@@ -723,6 +723,52 @@ colnames(alldfs)
 ##### READ alldfs
 #alldfs <- read.csv(file = '../alldfs.csv') 
 
+#slapstats
+# start_station - most trips originated from:
+sstationuse <- table(alldfs$start_station_name)
+names(which.max(sstationuse)) #"Philadelphia Museum of Art"
+#top 10 starting stations
+names(sort(sstationuse, decreasing = TRUE)[1:10])
+# [1] "Philadelphia Museum of Art"                
+#[2] "20th & Sansom"                             
+#[3] "15th & Spruce"                             
+#[4] "Spring Garden Station, BSL"                
+#[5] "Rodin Museum"                              
+#[6] "13th & Locust"                             
+#[7] "23rd & South"                              
+#[8] "Pennsylvania & Fairmount Perelman Building"
+#[9] "11th & Market"                             
+#[10] "11th & South"  
+
+estationuse <- table(alldfs$end_station_name)
+names(which.max(estationuse)) #[1] "Philadelphia Museum of Art"
+names(sort(estationuse, decreasing = TRUE)[1:10])
+#[1] "Philadelphia Museum of Art"                
+#[2] "20th & Sansom"                             
+#[3] "15th & Spruce"                             
+#[4] "Rodin Museum"                              
+#[5] "Spring Garden Station, BSL"                
+#[6] "18th & JFK"                                
+#[7] "23rd & South"                              
+#[8] "13th & Locust"                             
+#[9] "11th & South"                              
+#[10] "Pennsylvania & Fairmount Perelman Building"
+
+stationhm <- table(alldfs$start_station_name, alldfs$end_station_name)
+sort(stationhm, decreasing = TRUE)[1:10]
+stationhmdf <- data.frame(stationhm[1:154, 1:153])
+sort(stationhmdf$Freq, decreasing = TRUE)
+names(stationhmdf) <- c("start_station", "end_station", "volume")
+
+#find out the top 10 trip routes (start/end)
+top10trips <- stationhmdf %>%
+  arrange(desc(volume)) %>%
+  #select(start_station, end_station) %>%
+  slice(1:10)
+
+head(top10trips)
+
+
 #two-way table
 #count trips originated from each station by station ID
 sstation_use <- table(alldfs$start_station)
@@ -1104,6 +1150,43 @@ phlvehcrashes <- fromJSON(response) %>% data.frame()
 #      "Station Name: ", stationsdf$start_station_name,
 #      "Volume: ", stationsdf$start_station_volume,
 #      "Usage: ", stationsdf$start_station_use))
+
+
+
+### PLOT TOP 10 TRIPS 
+
+#top 10 trips
+stationhm <- table(alldfs$start_station_name, alldfs$end_station_name)
+stationhmdf <- data.frame(stationhm[1:154, 1:153])
+names(stationhmdf) <- c("start_station_name", "end_station_name", "volume")
+stationhmdf <- na.omit(stationhmdf)
+top10trips <- stationhmdf %>%
+  arrange(desc(volume)) %>%
+  slice(1:10)
+
+top10trips_plot <- top10trips %>% 
+  left_join(select(stationsdf, start_lon, start_lat, start_station_name), by = c("start_station_name" = "start_station_name"))
+
+#grab end_station coordinates
+estationsdf <- alldfs %>% select(end_station, end_station_name, end_lat, end_lon)
+#remove rows with the same station id
+estationsdf <- estationsdf %>% distinct(end_station, .keep_all = TRUE)
+#check no of rows
+nrow(estationsdf) #153
+
+#join end station coordinates
+top10trips_plot <- top10trips_plot %>% 
+  left_join(select(estationsdf, end_lon, end_lat, end_station_name), by = c("end_station_name" = "end_station_name"))
+
+### PLOT TOP 10 ROUTES
+m<-leaflet(data=top10trips_plot)%>%
+  addProviderTiles("Stamen.TonerLite") %>%
+  addCircleMarkers(lng = top10trips_plot$start_lon, lat = top10trips_plot$start_lat, color = "cadetblue", label = top10trips_plot$start_station_name) %>%
+  addCircleMarkers(lng = top10trips_plot$end_lon, lat = top10trips_plot$end_lat, color = "cadetblue", label = top10trips_plot$end_station_name)
+
+for (i in 1: nrow(top10trips_plot)) {
+  m <- m%>%addPolylines(data=top10trips_plot, lat=c(top10trips_plot$start_lat,top10trips_plot$end_lat),lng=c(top10trips_plot$start_lon,top10trips_plot$end_lon), color = "lightpink", weight = 1)
+}
 
 
 

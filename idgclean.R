@@ -139,8 +139,38 @@ station_heatmap_tab <- table(alldfs$start_station_name, alldfs$end_station_name)
 station_heatmap_df <- data.frame(station_heatmap_tab[1:154, 1:153])
 #rename columns
 names(station_heatmap_df) <- c("start_station", "end_station", "volume")
+
 #filter out the outlier (PMA-PMA route) that screws up entire heatmap #117891 trips - ready to plot
 station_heatmap_df <- filter(station_heatmap_df, volume != "117891")
+
+#top 10 trips
+stationhm <- table(alldfs$start_station_name, alldfs$end_station_name)
+stationhmdf <- data.frame(stationhm[1:154, 1:153])
+names(stationhmdf) <- c("start_station_name", "end_station_name", "volume")
+stationhmdf <- na.omit(stationhmdf)
+top10trips <- stationhmdf %>%
+  arrange(desc(volume)) %>%
+  slice(1:10)
+
+top10trips_plot <- top10trips %>% 
+  left_join(select(stationsdf, start_lon, start_lat, start_station_name), by = c("start_station_name" = "start_station_name"))
+
+#grab end_station coordinates
+estationsdf <- alldfs %>% select(end_station, end_station_name, end_lat, end_lon)
+#remove rows with the same station id
+estationsdf <- estationsdf %>% distinct(end_station, .keep_all = TRUE)
+#check no of rows
+nrow(estationsdf) #153
+
+#join end station coordinates
+top10trips_plot <- top10trips_plot %>% 
+  left_join(select(estationsdf, end_lon, end_lat, end_station_name), by = c("end_station_name" = "end_station_name"))
+
+
+
+
+
+
 
 
 

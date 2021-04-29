@@ -142,22 +142,24 @@ server <- function(input, output, session) {
     #print(buffer)
     
     #convert csv to sf for st_join to work
-    sf_phlbusshelters <- st_as_sf(phlbusshelters, coords = c("LONG.", "LAT."), crs = projcrs)
+    #sf_phlbusshelters <- st_as_sf(phlbusshelters, coords = c("LONG.", "LAT."), crs = projcrs)
+    
+    #convert csv to sf for st_join to work
+    sf_idgstations <- st_as_sf(stationsdf, coords = c("start_lon", "start_lat"), crs = projcrs)
 
     #display circle of the clicked point
     leafletProxy("testmap") %>%
       clearGroup("new_buffer") %>%
-      addCircles(click$lng, click$lat, radius=1200, stroke = FALSE, color="red", group = "new_buffer") 
+      addCircles(click$lng, click$lat, radius=900, stroke = FALSE, color="red", group = "new_buffer") 
     
-    #count number of bus shelters within buffer - 0.5mi radius
-    count <- sf::st_join(sf_phlbusshelters, buffer, left = F) %>%
-      nrow()
-    print(count)
+    #count number of indego stations within buffer - 0.5mi radius
+    count <- sf::st_join(buffer, sf_idgstations, left = T) %>% nrow()
+    print(count-1)
     
     #print count to ui
     withCallingHandlers(
       #use cat() to remove [1] before printing out on ui
-      output$console <- renderPrint(cat(count))
+      output$console <- renderPrint(cat(count-1))
     )
    
   })
@@ -245,5 +247,8 @@ server <- function(input, output, session) {
       coord_fixed()
     ggplotly(hmp) %>% layout(height = 800, width = 800)
   })
+  
+  # Table of top ten trips - start/ end stations 
+  output$toptentripstat <- renderTable(top10trips)
   
 }

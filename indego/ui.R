@@ -1,5 +1,3 @@
-
-
 #ui <- fluidPage(
 ui <-  dashboardPage(
   
@@ -64,9 +62,11 @@ ui <-  dashboardPage(
       #tab content
       tabItem(tabName = "heatmaptab",
               fluidRow(
-                h1("_Indego Stations - Trip Heatmap")),
+                h1("_Indego Stations - Trip Heatmap"),
+                br(),
+                box(width = 12, tableOutput("toptentripstat"))),
               fluidRow(
-                plotlyOutput("heatmapplot")
+                width=16, plotlyOutput("heatmapplot")
                 )
               ),
       
@@ -76,7 +76,7 @@ ui <-  dashboardPage(
                 h1("_Indego Stations - Map")),
               fluidRow(
                 box(width = 4,
-                  h4("Click anywhere on the map to find no. of bus stops within 0.5mi radius:"),h2(textOutput("console"))),
+                  h4("Click anywhere to find no. of indego stations within 0.5mi radius:"),h2(textOutput("console"))),
                 box(width = 4,
                     uiOutput("sdropdown")),
                 box(width = 4,
